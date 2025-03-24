@@ -6,6 +6,13 @@ class CCRE_AI_Scrapper_Root(ABC):
     root는 실행되는 쓰레드의 단위가 됩니다.
     """
 
+
+    def _next_queue(self):
+        """
+        다음 큐를 반환합니다.
+        """
+        pass
+
     @abstractmethod
     def grow(self):
         """
