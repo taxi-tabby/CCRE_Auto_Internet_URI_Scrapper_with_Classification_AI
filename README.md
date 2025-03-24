@@ -6,6 +6,18 @@
 
 
 
-
 ### ref
 https://huggingface.co/
+
+
+
+### devlog
+
+
+#### 2025.03.23
+
+아직 추상화 작업 중.
+
+#### 2025.03.23
+
+![1.png](./readme/1.png)
