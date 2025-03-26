@@ -11,19 +11,19 @@ class CCRE_AI_Scrapper_Root(ABC):
 
 
 
-    @property
-    @abstractmethod
-    def rds_db_connection(self):
-        """
-        각 root의 이름을 반환합니다.
-        이는 프로그램 실행 시 등록된 키를 비교하여 없는 경우 루트를 db에 등록합니다.
-        """
-        pass
+    # @property
+    # @abstractmethod
+    # def rds_db_connection(self):
+    #     """
+    #     각 root의 이름을 반환합니다.
+    #     이는 프로그램 실행 시 등록된 키를 비교하여 없는 경우 루트를 db에 등록합니다.
+    #     """
+    #     pass
 
-    @rds_db_connection.setter
-    @abstractmethod
-    def rds_db_connection(self, value: CCRE_AI_Scrapper_RDS_Connection_SQLAlchemy):
-        raise NotImplementedError
+    # @rds_db_connection.setter
+    # @abstractmethod
+    # def rds_db_connection(self, value: CCRE_AI_Scrapper_RDS_Connection_SQLAlchemy):
+    #     raise NotImplementedError
 
 
 

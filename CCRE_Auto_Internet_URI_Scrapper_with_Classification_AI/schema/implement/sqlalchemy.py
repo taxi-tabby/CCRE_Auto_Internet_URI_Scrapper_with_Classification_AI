@@ -4,6 +4,10 @@ from .connection_info import Connection_Info
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+from contextlib import contextmanager
+from typing import Generator
+from sqlalchemy.orm import Session
+
 class SQLAlchemyConnection(CCRE_AI_Scrapper_RDS_Connection_SQLAlchemy):
     def __init__(self):
         self._connection = None
@@ -21,15 +25,17 @@ class SQLAlchemyConnection(CCRE_AI_Scrapper_RDS_Connection_SQLAlchemy):
         
         
         
-    def get_db(self):
+    @contextmanager
+    def get_db(self) -> Generator[Session, None, None]:
+        """데이터베이스 세션을 생성하고 반환하며, 작업이 끝나면 세션을 닫는 컨텍스트 매니저."""
         if not self._session_local:
             raise ValueError("SessionLocal is not initialized. Ensure the connection is set.")
         
-        db = self._session_local()
+        db: Session = self._session_local()  # db 세션을 Session 타입으로 명시
         try:
-            yield db
+            yield db  # db 세션 반환
         finally:
-            db.close()
+            db.close()  # 세션 종료
 
 
     def _build_connection_url(self):
