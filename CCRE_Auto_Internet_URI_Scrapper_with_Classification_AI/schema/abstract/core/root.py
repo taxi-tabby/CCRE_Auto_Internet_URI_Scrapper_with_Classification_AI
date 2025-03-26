@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 from ..rds.sqlalchemy import CCRE_AI_Scrapper_RDS_Connection_SQLAlchemy
-from ..rds.connection import CCRE_RDS_Connection
+from ..rds.connection import CCRE_AI_Scrapper_RDS_Connection
 
 
 class CCRE_AI_Scrapper_Root(ABC):

@@ -13,6 +13,7 @@ class DatabaseType(Enum):
     """
     SQLITE3 = "sqlite3"
     POSTGRESQL = "postgresql"
+    RABBITMQ = "rabbitmq"
     # MYSQL = "mysql"
     # ORACLE = "oracle"
     

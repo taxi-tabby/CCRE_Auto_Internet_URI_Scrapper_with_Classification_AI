@@ -1,11 +1,30 @@
 from abc import ABC, abstractmethod
-from .predef import ConnectionAuthenticationFileType, ConnectionAuthenticationFileObject
+from .predef import ConnectionAuthenticationFileType, ConnectionAuthenticationFileObject, DatabaseType
 from typing import NamedTuple
 
 class CCRE_AI_Scrapper_RDS_Connection(ABC):
     """
     engine을 create 하기 위한 connection schema text를 정의합니다.
     """
+
+    @property
+    @abstractmethod
+    def db_type():
+        """
+        @getter
+        get db type
+        """
+        pass
+    
+    @db_type.setter
+    @abstractmethod
+    def db_type(self, value: DatabaseType):
+        """
+        @setter
+        set db type
+        """
+        pass
+
 
     @property
     @abstractmethod
@@ -78,6 +97,28 @@ class CCRE_AI_Scrapper_RDS_Connection(ABC):
         set port number
         """
         pass
+
+
+
+    @property
+    @abstractmethod
+    def vhost(self):
+        """
+        @getter
+        get port number
+        """
+        pass
+
+    @vhost.setter
+    @abstractmethod
+    def vhost(self, value: int):
+        """
+        @setter
+        set port number
+        """
+        pass
+
+
 
     @property
     @abstractmethod

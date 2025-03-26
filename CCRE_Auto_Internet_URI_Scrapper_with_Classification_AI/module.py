@@ -1,5 +1,2 @@
-from .core.index import initialize as _initialize
+from .core.index import initialize as server_start
 
-def server_start():
-    _initialize()
-    return
