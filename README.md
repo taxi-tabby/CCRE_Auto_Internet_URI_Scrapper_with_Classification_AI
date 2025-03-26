@@ -2,7 +2,9 @@
 
 
 ### dependency:
-- sqlalchemy
+- sqlalchemy (data storage)
+- pika (rabbitmq)
+- pyclamd (codesniff check)
 
 
 
@@ -11,7 +13,17 @@ https://huggingface.co/
 
 
 
+
+
 ### devlog
+
+#### 2025.03.26
+
+하면서 조금 기능이 점점 복합적으로 변해야할 것 같음.
+pyclamd 추가해서 간단히 악성 코드를 분별함.
+
+일단 rabbitmq에 대한 의존성을 가지기로 함.
+이게 효율적인듯 
 
 
 #### 2025.03.23

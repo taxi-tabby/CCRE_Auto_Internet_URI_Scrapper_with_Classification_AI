@@ -2,14 +2,54 @@ from abc import ABC, abstractmethod
 
 class CCRE_AI_Scrapper_Leaf(ABC):
     """
-    Branch는 root에서 시작되어, root의 하위 개념입니다. 
-    각각의 branch는 root에 다음 동작에 대한 큐를 입력하며
+    leaf 는 식별하는 객체입니다
     """
 
     @abstractmethod
-    def grow(self):
+    def ob_text(self, binary: bytes):
         """
-        branch 에서 탐색을 시작합니다.
+        text를 식별합니다
+        """
+        pass
+    
+    @abstractmethod
+    def ob_image_png(self, binary: bytes):
+        """
+        png 식별합니다
         """
         pass
         
+    @abstractmethod
+    def ob_image_jpeg(self, binary: bytes):
+        """
+        jpeg 식별합니다
+        """
+        pass
+    
+    @abstractmethod
+    def ob_image_svg(self, binary: bytes):
+        """
+        svg 식별합니다
+        """
+        pass
+
+    @abstractmethod
+    def ob_image_mp3(self, binary: bytes):
+        """
+        mp4 식별합니다
+        """
+        pass    
+
+    @abstractmethod
+    def ob_image_mp4(self, binary: bytes):
+        """
+        mp4 식별합니다
+        """
+        pass
+    
+    @abstractmethod
+    def ob_image_avi(self, binary: bytes):
+        """
+        avi 식별합니다
+        """
+        pass
