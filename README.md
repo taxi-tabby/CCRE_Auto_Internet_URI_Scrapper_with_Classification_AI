@@ -17,6 +17,29 @@ https://huggingface.co/
 
 ### devlog
 
+#### 2025.03.27
+
+대충 요런 느낌이 될 듯.
+```python
+
+
+from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.module import client_start
+from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.connection_info import Connection_Info
+from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.abstract.rds.predef import DatabaseType
+
+rds_connection = Connection_Info()
+rds_connection.db_type = DatabaseType.SQLITE3
+rds_connection.database = "test.db"
+
+client_start(
+    db_connection=rds_connection,
+    roots=[]
+)
+
+```
+
+
+
 #### 2025.03.26
 
 하면서 조금 기능이 점점 복합적으로 변해야할 것 같음.
