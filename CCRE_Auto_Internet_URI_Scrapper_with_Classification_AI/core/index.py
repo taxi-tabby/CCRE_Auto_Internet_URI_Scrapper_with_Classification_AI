@@ -17,6 +17,8 @@ def _worker_start_ingot(root: Scrapper_Root, db_session: SQLAlchemyConnection):
     print(f"worker start: {root.root_key}")
     
     with db_session.get_db() as db:
+        # Check if the table exists
+        
         db.execute(text('SELECT 1'))
     
     print(f"worker process complete: {root.root_key}")

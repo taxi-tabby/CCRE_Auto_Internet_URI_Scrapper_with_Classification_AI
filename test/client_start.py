@@ -30,7 +30,9 @@ client_start(
     db_connection=rds_connection,
     roots=[
         Scrapper_Root('google', 'https://www.google.com', Scrapper_Root_Access_Rule(
-            skip_uri_duplication=True, # URI 중복을 건너뛰는지 여부
+            skip_duplication_uri=True, # URI 중복을 건너뛰는지 여부
+            refresh_duplicate_uri=False, # URI 중복을 갱신하는지 여부
+            refresh_duplicate_uri_count=0 # URI 중복 갱신 횟수
             )),
     ]
 )
