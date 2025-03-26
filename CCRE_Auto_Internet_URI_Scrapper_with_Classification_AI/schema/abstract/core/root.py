@@ -1,8 +1,7 @@
 from abc import ABC, abstractmethod
 
 from ..rds.sqlalchemy import CCRE_AI_Scrapper_RDS_Connection_SQLAlchemy
-from ..rds.connection import CCRE_AI_Scrapper_RDS_Connection
-
+from .access_rule import CCRE_AI_Scrapper_Access_Rule
 
 class CCRE_AI_Scrapper_Root(ABC):
     """
@@ -43,6 +42,9 @@ class CCRE_AI_Scrapper_Root(ABC):
         raise NotImplementedError
 
 
+
+
+
     @property
     @abstractmethod
     def root_uri(self):
@@ -59,10 +61,18 @@ class CCRE_AI_Scrapper_Root(ABC):
     def root_uri(self, value: str):
         raise NotImplementedError
     
-    
+
+
+    @property
     @abstractmethod
-    def init():
+    def access_rule(self)->CCRE_AI_Scrapper_Access_Rule:
         """
-        초기화 함수
+        접근 규칙 설정
         """
         raise NotImplementedError
+
+    @access_rule.setter
+    @abstractmethod
+    def access_rule(self, value: CCRE_AI_Scrapper_Access_Rule):
+        raise NotImplementedError
+    

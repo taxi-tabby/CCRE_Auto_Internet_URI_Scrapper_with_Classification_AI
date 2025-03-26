@@ -26,6 +26,7 @@ def initialize(
     ):
     _addPath()
     
+    print("hello")
     
     conn = SQLAlchemyConnection()
     conn.connection = db_connection

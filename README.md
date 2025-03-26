@@ -20,6 +20,8 @@ https://huggingface.co/
 #### 2025.03.27
 
 대충 요런 느낌이 될 듯.
+
+> source
 ```python
 
 
@@ -37,6 +39,15 @@ client_start(
 )
 
 ```
+
+> response
+```console
+hello
+Exiting the program.
+watcher thread signaled to stop
+bye
+```
+
 
 
 
