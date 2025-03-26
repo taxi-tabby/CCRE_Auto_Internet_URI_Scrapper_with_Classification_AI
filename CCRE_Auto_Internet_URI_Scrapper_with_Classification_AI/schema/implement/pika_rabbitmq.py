@@ -2,7 +2,7 @@ import pika
 
 
 
-class pikaRabbitMQ:
+class PikaRabbitMQ:
     """
     기본적인 rabbitMQ 동작을 제어하는 클레~~~스
     """
