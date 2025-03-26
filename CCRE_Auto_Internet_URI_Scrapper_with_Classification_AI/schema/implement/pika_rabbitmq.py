@@ -54,14 +54,18 @@ class PikaRabbitMQ:
     
     def declare_channel(self) -> bool:
         """
-        ### declares a channel for the connection
-        ### 채널 생성
+        ### Declares a channel for the connection if not already created.
+        ### 채널 생성 (이미 있는 경우 생성하지 않음)
         """
         if not self._chk_conn():
             return False
-        else:
-            self._channel = self._connection.channel()
-            
+        
+        if self._channel is not None:
+            print("Channel already exists")
+            return True
+        
+        self._channel = self._connection.channel()
+        
         if self._channel is None:
             return False
         
@@ -74,7 +78,8 @@ class PikaRabbitMQ:
         """
         if self._chk_usable():
             self._channel.queue_declare(queue=queue_name)
-        
+        else:
+            print("connection or channel is not usable")
         
     def declare_exchange(self, exchange_name: str, exchange_type: str = 'direct'):
         """
@@ -83,7 +88,8 @@ class PikaRabbitMQ:
         """
         if self._chk_usable():
             self._channel.exchange_declare(exchange=exchange_name, exchange_type=exchange_type)
-            
+        else:
+            print("connection or channel is not usable")
         
     def bind_queue(self, exchange: str, queue_name: str, routing_key: str):
         """
@@ -92,7 +98,8 @@ class PikaRabbitMQ:
         """
         if self._chk_usable():
             self._channel.queue_bind(exchange=exchange, queue=queue_name, routing_key=routing_key)
-            
+        else:
+            print("connection or channel is not usable")
     
     def unbind_queue(self, exchange: str, queue_name: str, routing_key: str):
         """
@@ -101,7 +108,8 @@ class PikaRabbitMQ:
         """
         if self._chk_usable():
             self._channel.queue_unbind(exchange=exchange, queue=queue_name, routing_key=routing_key)
-            
+        else:
+            print("connection or channel is not usable")
             
     def delete_queue(self, queue_name: str):
         """
@@ -110,6 +118,9 @@ class PikaRabbitMQ:
         """
         if self._chk_usable():
             self._channel.queue_delete(queue=queue_name)    
+        else:
+            print("connection or channel is not usable")
+            
             
     def delete_exchange(self, exchange_name: str):
         """
@@ -118,7 +129,8 @@ class PikaRabbitMQ:
         """
         if self._chk_usable():
             self._channel.exchange_delete(exchange=exchange_name)
-    
+        else:
+            print("connection or channel is not usable")
     
     def set_qos(self, prefetch_count: int):
         """
@@ -127,15 +139,22 @@ class PikaRabbitMQ:
         """
         if self._chk_usable():
             self._channel.basic_qos(prefetch_count=prefetch_count)
-    
+        else:
+            print("connection or channel is not usable")
         
-    def b_publish(self, exchange: str, queue_name: str, message: str | bytes):
+        
+        
+    def b_publish(self, exchange: str, routing_key: str, message: str | bytes):
         """
         ### Publishes a message to the specified queue.
         ### 메세지 기본 발행
         """
+        print("publishing", self._chk_usable(), self._chk_conn())
         if self._chk_usable():
-            self._channel.basic_publish(exchange=exchange, routing_key=queue_name, body=message)
+            self._channel.basic_publish(exchange=exchange, routing_key=routing_key, body=message,)
+        else:
+            print("connection or channel is not usable")
+        
         
         
     def b_consume(self, queue_name: str, callback, delay_microseconds: int = 0):
@@ -151,7 +170,8 @@ class PikaRabbitMQ:
         if self._chk_usable():
             self._channel.basic_consume(queue=queue_name, on_message_callback=decorated_callback, auto_ack=True)
             self._channel.start_consuming()
-        
+        else:
+            print("connection or channel is not usable")
         
     def close(self):
         """

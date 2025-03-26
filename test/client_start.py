@@ -26,9 +26,21 @@ rds_connection.db_type = DatabaseType.SQLITE3
 rds_connection.database = "test.db"
 
 
+rabbit_mq = Connection_Info()
+rabbit_mq.db_type = DatabaseType.RABBITMQ
+rabbit_mq.host = "localhost"
+rabbit_mq.port = 5672
+rabbit_mq.user = "test_user"
+rabbit_mq.password = "1234"
+rabbit_mq.vhost = "/"
+
+
+
+
 # start client example
 client_start(
-    db_connection=rds_connection,
+    db_rds_connection=rds_connection,
+    db_mq_connection=rabbit_mq,
     roots=[
         Scrapper_Root('google', 'https://www.google.com', Scrapper_Root_Access_Rule(
             
