@@ -10,46 +10,46 @@ class CCRE_AI_Scrapper_Leaf(ABC):
         """
         text를 식별합니다
         """
-        pass
+        raise NotImplementedError
     
     @abstractmethod
     def ob_image_png(self, binary: bytes):
         """
         png 식별합니다
         """
-        pass
+        raise NotImplementedError
         
     @abstractmethod
     def ob_image_jpeg(self, binary: bytes):
         """
         jpeg 식별합니다
         """
-        pass
+        raise NotImplementedError
     
     @abstractmethod
     def ob_image_svg(self, binary: bytes):
         """
         svg 식별합니다
         """
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def ob_image_mp3(self, binary: bytes):
         """
         mp4 식별합니다
         """
-        pass    
+        raise NotImplementedError    
 
     @abstractmethod
     def ob_image_mp4(self, binary: bytes):
         """
         mp4 식별합니다
         """
-        pass
+        raise NotImplementedError
     
     @abstractmethod
     def ob_image_avi(self, binary: bytes):
         """
         avi 식별합니다
         """
-        pass
+        raise NotImplementedError

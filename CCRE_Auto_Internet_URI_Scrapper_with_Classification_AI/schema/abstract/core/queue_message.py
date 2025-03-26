@@ -13,4 +13,4 @@ class CCRE_AI_Scrapper_QueueMessage(ABC, Generic[MessageObjectGeneric], Generic[
         """
         Set the message and return self for chaining
         """
-        pass
+        raise NotImplementedError

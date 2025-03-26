@@ -1,5 +1,9 @@
 from abc import ABC, abstractmethod
 
+from ..rds.sqlalchemy import CCRE_AI_Scrapper_RDS_Connection_SQLAlchemy
+from ..rds.connection import CCRE_RDS_Connection
+
+
 class CCRE_AI_Scrapper_Root(ABC):
     """
     root는 여러게일 가능성이 있으며, 각 뿌리에서 동시에 데이터를 수집합니다.
@@ -7,16 +11,58 @@ class CCRE_AI_Scrapper_Root(ABC):
     """
 
 
-    def _next_queue(self):
+
+    @property
+    @abstractmethod
+    def rds_db_connection(self):
         """
-        다음 큐를 반환합니다.
+        각 root의 이름을 반환합니다.
+        이는 프로그램 실행 시 등록된 키를 비교하여 없는 경우 루트를 db에 등록합니다.
         """
         pass
 
+    @rds_db_connection.setter
     @abstractmethod
-    def grow(self):
+    def rds_db_connection(self, value: CCRE_AI_Scrapper_RDS_Connection_SQLAlchemy):
+        raise NotImplementedError
+
+
+
+    @property
+    @abstractmethod
+    def root_key(self):
         """
-        root 에서 탐색을 시작합니다.
+        각 root의 이름을 반환합니다.
+        이는 프로그램 실행 시 등록된 키를 비교하여 없는 경우 루트를 db에 등록합니다.
         """
-        pass
+        raise NotImplementedError
+
+    @root_key.setter
+    @abstractmethod
+    def root_key(self, value: str):
+        raise NotImplementedError
+
+
+    @property
+    @abstractmethod
+    def root_uri(self):
+        """
+        시작 지점의 uri 입니다
+        이 uri를 기반으로 접근 가능한 모든 uri를 수집합니다.
         
+        uri는 특수한 포멧(변수)을 지정 가능합니다 (ex: https://www.naver.com/{page})
+        """
+        raise NotImplementedError
+
+    @root_uri.setter
+    @abstractmethod
+    def root_uri(self, value: str):
+        raise NotImplementedError
+    
+    
+    @abstractmethod
+    def init():
+        """
+        초기화 함수
+        """
+        raise NotImplementedError

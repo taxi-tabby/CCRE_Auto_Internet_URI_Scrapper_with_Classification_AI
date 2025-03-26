@@ -11,5 +11,5 @@ class CCRE_AI_Scrapper_Branch(ABC):
         """
         branch 에서 탐색을 시작합니다.
         """
-        pass
+        raise NotImplementedError
         
