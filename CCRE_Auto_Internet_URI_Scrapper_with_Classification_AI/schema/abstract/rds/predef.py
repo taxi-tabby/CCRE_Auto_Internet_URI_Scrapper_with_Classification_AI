@@ -14,7 +14,7 @@ class DatabaseType(Enum):
     SQLITE3 = "sqlite3"
     POSTGRESQL = "postgresql"
     RABBITMQ = "rabbitmq"
-    # MYSQL = "mysql"
+    MYSQL = "mysql"
     # ORACLE = "oracle"
     
 class ConnectionAuthenticationFileObject(TypedDict):

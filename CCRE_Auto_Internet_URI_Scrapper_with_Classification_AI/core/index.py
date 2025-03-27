@@ -1,15 +1,14 @@
 import time
 
 from sqlalchemy import text
+from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.rds_migration import table_init
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.connection_info import Connection_Info
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.pika_rabbitmq import PikaRabbitMQ
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.scrapper_root import Scrapper_Root
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.sqlalchemy import SQLAlchemyConnection
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.thread_manager import ThreadManager
+from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.db.models import *
 from .import_path import add_module_path
-
-def _addPath():
-    add_module_path("../")
 
 
 
@@ -23,8 +22,9 @@ def _worker_start_ingot(root: Scrapper_Root, db_session: SQLAlchemyConnection, m
     with db_session.get_db() as db:
         # 테스트 발행. 잘 대는고만. 이제 동적 생성만 하면 대겠네
         # Check if the table exists
-        mq_session.b_publish("test.exchange", "test.routing.#", "helloworld1")
+        # mq_session.b_publish("test.exchange", "test.routing.#", "helloworld1")
         # db.execute(text('SELECT 1'))
+        pass
     
     print(f"worker process complete: {root.root_key}")
     
@@ -39,7 +39,8 @@ def initialize(
     db_mq_connection: Connection_Info, # db storage connection info
     roots: list[Scrapper_Root] # root list
     ):
-    _addPath()
+    
+    add_module_path("../")
     
     print("hello")
     
@@ -52,6 +53,14 @@ def initialize(
     mq_conn.connect(db_mq_connection.host, db_mq_connection.port, db_mq_connection.user, db_mq_connection.password, db_mq_connection.vhost)
     mq_conn.declare_channel()
     print("mq connection initialized")
+    
+    
+
+    with conn.get_db() as db:
+        # rds db table init
+        table_init(conn._engine, db, db_rds_connection.db_type)
+        
+    
     
     thread_manager = ThreadManager()
     thread_manager.add_watcher(check_interval=2)
