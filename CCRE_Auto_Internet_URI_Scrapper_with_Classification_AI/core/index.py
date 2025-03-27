@@ -53,11 +53,25 @@ def _worker_start_ingot(root: (Scrapper_Root|Roots), db_session: SQLAlchemyConne
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 def initialize(
     db_rds_connection: Connection_Info, # db storage connection info
     db_mq_connection: Connection_Info, # db storage connection info
     roots: list[Scrapper_Root] # root list
     ):
+    """
+    프로그램 시작점
+    """
     
     add_module_path("../")
     
