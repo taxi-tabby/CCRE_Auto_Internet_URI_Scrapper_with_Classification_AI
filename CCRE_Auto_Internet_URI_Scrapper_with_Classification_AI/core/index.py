@@ -54,19 +54,24 @@ def initialize(
     mq_conn.declare_channel()
     print("mq connection initialized")
     
+    all_roots: list[Roots] = []
     
     with conn.get_db() as db:
         # rds db table init
-        table_init(conn._engine, db, db_rds_connection.db_type)
-        update_roots(db, roots)
+        table_init(conn._engine, db, db_rds_connection.db_type) # 테이블 생성
+        update_roots(db, roots) # root 정보 업데이트
 
+        # 모든 root를 획득.
+        page_n: int = 1
         while True:
-            new_roots = get_roots_list(db)
+            new_roots = get_roots_list(db, page_n)
             if not new_roots:
                 break
-            # roots.extend(new_roots)
+            all_roots.extend(new_roots)
+            page_n += 1
         
     
+    print("all roots: ", all_roots)
     
     thread_manager = ThreadManager()
     thread_manager.add_watcher(check_interval=2)
