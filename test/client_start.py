@@ -38,12 +38,8 @@ rabbit_mq.vhost = "/"
 
 
 
-# start client example
-client_start(
-    db_rds_connection=rds_connection,
-    db_mq_connection=rabbit_mq,
-    roots=[
-        Scrapper_Root('google', 'https://www.google.com', Scrapper_Root_Access_Rule(
+# option
+option = Scrapper_Root_Access_Rule(
             
             # Whether to skip duplicate URIs (If False, it may endlessly loop on a specific page.)
             skip_duplication_uri=True, 
@@ -54,6 +50,15 @@ client_start(
             # Threshold count of duplicate URIs before refreshing
             refresh_duplicate_uri_count=10 
             
-            )),
+            )
+
+
+# start client example
+client_start(
+    db_rds_connection=rds_connection,
+    db_mq_connection=rabbit_mq,
+    roots=[
+        Scrapper_Root('google', 'https://www.google.com', option),
+        Scrapper_Root('tennisreact_react_parsing_test', 'https://tennisreact.netlify.app', option),
     ]
 )

@@ -113,7 +113,8 @@ def fetch_with_redirects(url: str, max_redirects: int = 5, headers: Dict[str, st
             location = parsed_response["headers"].get("Location")
             if not location:
                 raise Exception("Redirect response missing 'Location' header")
-            print(f"Redirected to: {location}")
+            
+            # print(f"Redirected to: {location}")
 
             # 절대 URL이 아닌 경우 처리
             if not location.startswith("http"):

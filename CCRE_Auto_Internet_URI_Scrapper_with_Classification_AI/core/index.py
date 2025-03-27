@@ -1,7 +1,7 @@
 import time
 
 from sqlalchemy import text
-from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.rds import table_init, get_roots_list, update_roots
+from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.rds import get_root_branch_count, table_init, get_roots_list, update_roots
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.crawing import fetch_with_redirects
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.connection_info import Connection_Info
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.pika_rabbitmq import PikaRabbitMQ
@@ -13,42 +13,48 @@ from .import_path import add_module_path
 
 
 
-def _worker_start_ingot(root: (Scrapper_Root|Roots), db_session: SQLAlchemyConnection, mq_session: PikaRabbitMQ):
+def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_session: PikaRabbitMQ):
     """워커 연결용 함수.
-
     Args:
         root (Scrapper_Root): root 정보가 포함된 데이터
         db_session (SQLAlchemyConnection): rds 요청용 데이터베이스 세션
         mq_session (PikaRabbitMQ): 메세지 큐를 요청하거나 소비하기 위한 세션
     """
-
-
+    
     print(f"worker start: {root.root_key}")
     
-    # 테스트 실행
     
-    try:
-        custom_headers = {
-            "User-Agent": "CCRE_URI_CRAW_CLIENT/1.0", 
-            "User-Agent-Source": "https://github.com/taxi-tabby/CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI"
-            }
-        final_response = fetch_with_redirects(root.root_uri, headers=custom_headers)
-        print(final_response['headers'])
-    except Exception as e:
-        print(f"Error: {e}")
-        
-    
+    flag_branch_no_exists = False 
     with db_session.get_db() as db:
-        # 테스트 발행. 잘 대는고만. 이제 동적 생성만 하면 대겠네
-        # Check if the table exists
-        # mq_session.b_publish("test.exchange", "test.routing.#", "helloworld1")
-        # db.execute(text('SELECT 1'))
-        pass
+        cnt = get_root_branch_count(db, root.id)
+        if cnt == 0:
+            flag_branch_no_exists = True
+    
+    
+    # 최초에 브렌치 데이터 없으면 요청해서 메세지 큐를 생성. 
+    if flag_branch_no_exists:
+        try:
+            custom_headers = {
+                "User-Agent": "CCRE_URI_CRAW_CLIENT/1.0", 
+                "User-Agent-Source": "https://github.com/taxi-tabby/CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI"
+                }
+            final_response = fetch_with_redirects(root.root_uri, headers=custom_headers, max_redirects=10)
+            #print(final_response['headers'])
+        except Exception as e:
+            print(f"Error: {e}")
+        
+        
+    # 메세지 큐 소비 처리
+    def callback(ch, method, properties, body):
+        print(f" [x] Received {body}")
+        ch.basic_ack(delivery_tag=method.delivery_tag)
+    
+    # 메세지 큐 소비
+    mq_session.b_consume(f'{root.root_key}.queue', callback, 1000)
+
     
     print(f"worker process complete: {root.root_key}")
     
-    
-    pass
 
 
 
@@ -104,12 +110,11 @@ def initialize(
             page_n += 1
         
     
-    print("all roots: ", all_roots)
     
     thread_manager = ThreadManager()
-    thread_manager.add_watcher(check_interval=2)
+    thread_manager.add_watcher(check_interval=10)
     
-    for i, root in enumerate(roots):
+    for i, root in enumerate(all_roots):
         thread_manager.add_worker(target=_worker_start_ingot, args=(root, conn, mq_conn,), thread_id=i)
         
     thread_manager.start_all()

@@ -124,6 +124,14 @@ def get_roots_list(db: Session, page: int = 1, block: int = 10) -> list[Roots]:
     block 을 매우 높게 하여 한번에 얻을 수도 있음.
     """
     return db.query(Roots).offset((page - 1) * block).limit(block).all()
+
+
+
+def get_root_branch_count(db: Session, root_id: int) -> int:
+    """
+    루트에 연결된 브랜치 수를 반환
+    """
+    return db.query(Branches).filter_by(root_id = root_id).count()
         
         
         
