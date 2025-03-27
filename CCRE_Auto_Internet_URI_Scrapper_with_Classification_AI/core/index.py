@@ -2,6 +2,7 @@ import time
 
 from sqlalchemy import text
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.rds import table_init, get_roots_list, update_roots
+from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.crawing import fetch_with_redirects
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.connection_info import Connection_Info
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.pika_rabbitmq import PikaRabbitMQ
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.scrapper_root import Scrapper_Root
@@ -12,12 +13,30 @@ from .import_path import add_module_path
 
 
 
-def _worker_start_ingot(root: Scrapper_Root, db_session: SQLAlchemyConnection, mq_session: PikaRabbitMQ):
+def _worker_start_ingot(root: (Scrapper_Root|Roots), db_session: SQLAlchemyConnection, mq_session: PikaRabbitMQ):
+    """워커 연결용 함수.
+
+    Args:
+        root (Scrapper_Root): root 정보가 포함된 데이터
+        db_session (SQLAlchemyConnection): rds 요청용 데이터베이스 세션
+        mq_session (PikaRabbitMQ): 메세지 큐를 요청하거나 소비하기 위한 세션
+    """
+
 
     print(f"worker start: {root.root_key}")
     
+    # 테스트 실행
     
-    
+    try:
+        custom_headers = {
+            "User-Agent": "CCRE_URI_CRAW_CLIENT/1.0", 
+            "User-Agent-Source": "https://github.com/taxi-tabby/CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI"
+            }
+        final_response = fetch_with_redirects(root.root_uri, headers=custom_headers)
+        print(final_response['headers'])
+    except Exception as e:
+        print(f"Error: {e}")
+        
     
     with db_session.get_db() as db:
         # 테스트 발행. 잘 대는고만. 이제 동적 생성만 하면 대겠네

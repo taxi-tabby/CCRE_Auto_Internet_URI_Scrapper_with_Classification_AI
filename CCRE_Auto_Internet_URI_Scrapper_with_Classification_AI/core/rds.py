@@ -10,7 +10,8 @@ from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.scr
 """
 RDS 동작 모음.
 따로 mvc 어찌고 뭐시기 패턴을 쓸 이유가 없다.
-목적에 맞게 씁시다 사람들아.
+목적에 맞게 씁시다 사람들아. 
+과한 정리 개념은 오히려 코드를 복잡하게 만들어
 """
 
 
