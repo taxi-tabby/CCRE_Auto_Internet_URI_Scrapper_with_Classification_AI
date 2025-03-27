@@ -19,7 +19,7 @@ class Roots(Base):
     __tablename__ = "roots"
     
     # 고유번호
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True, type_=BigInteger)
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True, type_=Integer)
     
     # 루트 고유 지정 키
     root_key: Mapped[str] = mapped_column(type_=String(255), nullable=False)

@@ -1,7 +1,7 @@
 import time
 
 from sqlalchemy import text
-from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.rds_migration import table_init
+from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.rds import table_init, get_roots_list, update_roots
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.connection_info import Connection_Info
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.pika_rabbitmq import PikaRabbitMQ
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.scrapper_root import Scrapper_Root
@@ -55,10 +55,16 @@ def initialize(
     print("mq connection initialized")
     
     
-
     with conn.get_db() as db:
         # rds db table init
         table_init(conn._engine, db, db_rds_connection.db_type)
+        update_roots(db, roots)
+
+        while True:
+            new_roots = get_roots_list(db)
+            if not new_roots:
+                break
+            # roots.extend(new_roots)
         
     
     

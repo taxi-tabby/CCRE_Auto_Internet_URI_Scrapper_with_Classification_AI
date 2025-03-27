@@ -19,10 +19,10 @@ class Branches(Base):
     __tablename__ = "branches"
     
     # 고유번호
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True, type_=BigInteger)
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True, type_=Integer)
     
     # 루트 id
-    root_id: Mapped[int] = mapped_column(ForeignKey("roots.id"), nullable=False, type_=BigInteger)
+    root_id: Mapped[int] = mapped_column(ForeignKey("roots.id"), nullable=False, type_=Integer)
     
     # 브랜치에서 검색할 uri
     branch_uri: Mapped[str] = mapped_column(type_=Text, nullable=False)

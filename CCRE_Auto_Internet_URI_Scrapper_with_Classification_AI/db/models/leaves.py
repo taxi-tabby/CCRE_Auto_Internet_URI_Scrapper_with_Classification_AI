@@ -1,7 +1,7 @@
 
 from typing import List
 from typing import Optional
-from sqlalchemy import BigInteger, ForeignKey, Index, Text, text
+from sqlalchemy import BigInteger, ForeignKey, Index, Integer, Text, text
 from sqlalchemy import String
 from sqlalchemy.orm import DeclarativeBase, declarative_base
 from sqlalchemy.orm import Mapped
@@ -20,13 +20,13 @@ class Leaves(Base):
     __tablename__ = "leaves"
     
     # 고유번호
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True, type_=BigInteger)
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True, type_=Integer)
     
     # 루트 id
-    root_id: Mapped[int] = mapped_column(ForeignKey("roots.id"), nullable=False, type_=BigInteger)
+    root_id: Mapped[int] = mapped_column(ForeignKey("roots.id"), nullable=False, type_=Integer)
     
     # 브랜치 id
-    branch_id: Mapped[int] = mapped_column(ForeignKey("branches.id"), nullable=False, type_=BigInteger)
+    branch_id: Mapped[int] = mapped_column(ForeignKey("branches.id"), nullable=False, type_=Integer)
     
     # 식별된 데이터 문자열
     val_classified: Mapped[str] = mapped_column(type_=Text, nullable=False)
