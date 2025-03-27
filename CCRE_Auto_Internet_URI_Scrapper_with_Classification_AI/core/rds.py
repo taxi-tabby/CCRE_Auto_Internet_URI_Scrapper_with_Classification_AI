@@ -97,10 +97,12 @@ def update_roots(db: Session, roots: list[Scrapper_Root]):
                 if existing_root:
                     # 기존 root 업데이트
                     existing_root.root_uri = root.root_uri
+                    print(f'root updated: {root.root_key}')
                 else:
                     # 새로운 root 추가
                     new_root = Roots(root_key=root.root_key, root_uri=root.root_uri)
                     db.add(new_root)
+                    print(f'new root added: {root.root_key}')
     except SQLAlchemyError as e:
         print(f"SQLAlchemyError occurred: {str(e)}")
     except Exception as e:
