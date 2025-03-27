@@ -3,7 +3,9 @@ import time
 from sqlalchemy import text
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.rds import get_root_branch_count, table_init, get_roots_list, update_roots
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.crawing import fetch_with_redirects
-from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.parser.xml import classify_uris, extract_links_from_xml
+from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.parser.json import parse_json_string
+from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.parser.xml import  extract_links_from_xml
+from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.stringify.json import stringify_to_json
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.connection_info import Connection_Info
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.pika_rabbitmq import PikaRabbitMQ
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.scrapper_root import Scrapper_Root
@@ -43,6 +45,21 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
     # if not mq_conn.exists_bind(config['exchange_name'], config['queue_name'], config['route_key']):
     mq_session.bind_queue(config['exchange_name'], config['queue_name'], config['route_key'])
     
+    
+    def crawing_and_queuing(uri: str):
+        try:
+            custom_headers = {
+                "User-Agent": "CCRE_URI_CRAWING", 
+                "User-Agent-Source": "https://github.com/taxi-tabby/CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI"
+                }
+            final_response = fetch_with_redirects(uri, headers=custom_headers, max_redirects=5)
+            links = extract_links_from_xml(final_response['body'])
+            
+            for link in links:
+                mq_session.b_publish(config['exchange_name'], config['route_key'], stringify_to_json(link))
+                
+        except Exception as e:
+            print(f"Error: {e}")
 
     flag_branch_no_exists = False 
     with db_session.get_db() as db:
@@ -53,27 +70,21 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
     
     # 최초에 브렌치 데이터 없으면 요청해서 메세지 큐를 생성. 
     if flag_branch_no_exists:
-        try:
-            custom_headers = {
-                "User-Agent": "CCRE_URI_CRAW_CLIENT/1.0", 
-                "User-Agent-Source": "https://github.com/taxi-tabby/CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI"
-                }
-            final_response = fetch_with_redirects(root.root_uri, headers=custom_headers, max_redirects=10)
-            links = classify_uris(final_response['body'])
-            
-            for link in links:
-                mq_session.b_publish(config['exchange_name'], config['route_key'], link['uri'])
-                
-        except Exception as e:
-            print(f"Error: {e}")
-        
+        crawing_and_queuing(root.root_uri)
         
     # 메세지 큐 소비 처리
     def callback(ch, method, properties, body):
-        print(f" [{root.root_key}] Received {body}")
+        obj = parse_json_string(body)
+
+        assembled_uri = obj['url']
+        if obj['is_relative']:
+            assembled_uri = root.root_uri + obj['url']
+            
+        print(f" [{root.root_key}] Queue received {obj} and crawling {assembled_uri}")
+        crawing_and_queuing(assembled_uri)
     
     # 메세지 큐 소비
-    mq_session.b_consume(config['queue_name'], callback, delay_sec=1)
+    mq_session.b_consume(config['queue_name'], callback, delay_sec=0.1)
 
 
 

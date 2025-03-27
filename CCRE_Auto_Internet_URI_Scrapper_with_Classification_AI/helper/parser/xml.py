@@ -4,59 +4,38 @@ from .regexp import get_uri_pattern
 from collections import defaultdict
 
 
-
-
-def classify_uris(text: str):
+def _classify_uri(uri: str):
     """
-    Extracts and classifies URI-like strings from the input text into a single list with type attributes.
+    Classifies the given URI-like string into its type.
 
     Args:
-        text (str): The input text containing URI-like strings.
+        uri (str): The URI to classify.
 
     Returns:
-        list: A list of dictionaries where each dictionary contains a URI and its type.
+        str: The type of the URI.
     """
-    uri_pattern = get_uri_pattern()
-    matches = uri_pattern.findall(text)
-
-    # List to store classified URIs with their types
-    classified_uris = []
-
-    for match in matches:
-        if match.startswith(("http://", "https://")):
-            uri_type = "http"
-        elif match.startswith("ftp://"):
-            uri_type = "ftp"
-        elif match.startswith("file://"):
-            uri_type = "file"
-        elif match.startswith("mailto:"):
-            uri_type = "mailto"
-        elif match.startswith(("ws://", "wss://")):
-            uri_type = "websocket"
-        elif match.startswith("www."):
-            uri_type = "www"
-        elif match.startswith("data:"):
-            uri_type = "data_uri"
-        elif match.startswith("./") or match.startswith("../"):
-            uri_type = "relative_path"
-        elif match.startswith("/"):
-            uri_type = "absolute_path"
-        elif "@" in match:
-            uri_type = "email"
-        else:
-            uri_type = "domain"
-
-        classified_uris.append({"uri": match, "type": uri_type})
-
-    return classified_uris
-
-
-
-
-
-
-
-
+    if uri.startswith(("http://", "https://")):
+        return "http"
+    elif uri.startswith("ftp://"):
+        return "ftp"
+    elif uri.startswith("file://"):
+        return "file"
+    elif uri.startswith("mailto:"):
+        return "mailto"
+    elif uri.startswith(("ws://", "wss://")):
+        return "websocket"
+    elif uri.startswith("www."):
+        return "www"
+    elif uri.startswith("data:"):
+        return "data_uri"
+    elif uri.startswith("./") or uri.startswith("../"):
+        return "relative_path"
+    elif uri.startswith("/"):
+        return "absolute_path"
+    elif "@" in uri:
+        return "email"
+    else:
+        return "domain"
 
 def extract_links_from_xml(http_body: str):
     """
@@ -66,7 +45,7 @@ def extract_links_from_xml(http_body: str):
         http_body (str): The full HTTP body containing the XML or other content.
 
     Returns:
-        list: A list of dictionaries containing URLs and their extensions (if any).
+        list: A list of dictionaries containing URLs, their extensions (if any), and a flag indicating if it's a relative path.
     """
     try:
         links = []
@@ -76,13 +55,27 @@ def extract_links_from_xml(http_body: str):
         matches = uri_pattern.findall(http_body)
 
         for match in matches:
+            # Clean the match string and extract the path
+            url = match.strip()
+            parsed_url = urlparse(url)
+            path = parsed_url.path
+
+            # Determine if it's a relative URL
+            is_relative = not parsed_url.scheme  # If no scheme, it's relative
+
             # Extract file extension if present
-            path = urlparse(match.strip()).path
             ext = os.path.splitext(path)[1][1:]  # Get extension without the dot
-            if ext:
-                links.append({"url": match.strip(), "ext": ext})
-            else:
-                links.append({"url": match.strip(), "ext": None})
+
+            # Classify the URI type
+            uri_type = _classify_uri(url)
+
+            # Add URL, extension, relative flag, and URI type to the result
+            links.append({
+                "url": url,
+                "ext": ext if ext else None,
+                "is_relative": is_relative,
+                "classified": uri_type
+            })
 
         return links
     except Exception as e:

@@ -1,11 +1,11 @@
 import re
 
-import re
+
 
 def get_uri_pattern():
     """
-    Returns a compiled regular expression pattern to match various types of URI-like strings.
+    Returns a compiled regular expression pattern to match only valid URI-like strings.
+    This includes absolute URIs (http, https, ftp) and relative URIs (starting with '/', './', or '../').
     """
-    # 새로운 정규식 패턴: 모든 프로토콜 지원하는 URI 추출
-    pattern = r'([a-zA-Z][a-zA-Z\d+\-.]*://[^\s">]+)'  # 단순화된 패턴
+    pattern = r'(?i)\b(?:https?|ftp):\/\/(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(?:\/[^\s"<>]*)?|\b(?:\/(?:[a-zA-Z0-9-._~:/?#[\]@!$&\'()*+,;=]+|\.[a-zA-Z0-9-._~:/?#[\]@!$&\'()*+,;=]+)+|\.\.\/[a-zA-Z0-9-._~:/?#[\]@!$&\'()*+,;=]+(?:\/[^\s"<>]*)?)'
     return re.compile(pattern)

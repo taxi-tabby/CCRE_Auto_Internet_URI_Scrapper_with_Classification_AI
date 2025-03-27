@@ -1,6 +1,10 @@
 # CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI
 
 
+```json
+"User-Agent": "CCRE_URI_CRAWING" 
+```
+
 ### dependency:
 - sqlalchemy (data storage)
 - pika (rabbitmq)
@@ -52,6 +56,11 @@ Thread 1 is not alive.
 worker process complete: google
 bye
 ```
+
+실행 및 종료.
+- 필요한 것: 중복 체크, 정규식 강화, uri 아닌 것 요청 x 
+![2.gif](./readme/2.gif)
+
 
 
 #### 2025.03.27 (4)
