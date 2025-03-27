@@ -17,6 +17,43 @@ https://huggingface.co/
 
 ### devlog
 
+
+#### 2025.03.28 (1)
+
+
+점점 의도대로 가고 있어. 가자 가자
+```console
+hello
+db connection initialized
+root updated: google
+root updated: tennisreact_react_parsing_test
+worker start: google
+worker start: tennisreact_react_parsing_test
+ [google] Received b'http://schema.org/WebPage'
+ [google] Received b'https://www.google.com/imghp?hl=ko&tab=wi'
+Error: Too many redirects
+ [google] Received b'http://maps.google.co.kr/maps?hl=ko&tab=wl'
+ [google] Received b'https://play.google.com/?hl=ko&tab=w8'
+ [google] Received b'https://www.youtube.com/?tab=w1'
+ [google] Received b'https://news.google.com/?tab=wn'
+ [google] Received b'https://mail.google.com/mail/?tab=wm'
+ [google] Received b'https://drive.google.com/?tab=wo'
+ [google] Received b'https://www.google.co.kr/intl/ko/about/products?tab=wh'
+ [google] Received b'http://www.google.co.kr/history/optout?hl=ko'
+ [google] Received b'https://accounts.google.com/ServiceLogin?hl=ko&passive=true&continue=http://www.google.com/webhp&ec=GAZAAQ'
+ [google] Received b'http://www.google.co.kr/intl/ko/services/'
+ [google] Received b'http://www.google.com/setprefdomain?prefdom=KR&amp;prev=http://www.google.co.kr/&amp;sig=K_yj3Y8NgCK2GQfTVtlRpGUVV8H6I%3D'
+Exiting the program.
+0worker process complete: tennisreact_react_parsing_test
+ worker thread signaled to stop
+1 worker thread signaled to stop
+watcher thread signaled to stop
+Thread 1 is not alive.
+worker process complete: google
+bye
+```
+
+
 #### 2025.03.27 (4)
 
 javascript 렌더링 뒤에 로드하는 컨텐츠에 대한 것을 생각을 안했었네 ㅋㅋ 

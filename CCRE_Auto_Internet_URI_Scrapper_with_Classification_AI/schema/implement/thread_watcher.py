@@ -16,7 +16,7 @@ class WatcherThread(threading.Thread):
             time.sleep(self.check_interval)
             for worker in self.worker_threads:
                 if not worker.is_alive():  # 워커가 살아 있지 않다면
-                    print(f"Thread {worker.thread_id} is not alive. Restarting...")
+                    print(f"Thread {worker.thread_id} is not alive.")
                     if self.is_active:  # 감시자가 활성 상태일 때만 재시작
                         self.restart_worker_thread(worker)
 

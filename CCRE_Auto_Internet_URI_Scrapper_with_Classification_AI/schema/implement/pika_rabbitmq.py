@@ -33,6 +33,9 @@ class PikaRabbitMQ:
         
         return False
     
+    
+    
+    
     def _chk_conn(self) -> bool:
         """
         ### Check connection
@@ -50,6 +53,84 @@ class PikaRabbitMQ:
         if self._connection is None or self._channel is None:
             return False
         return True
+    
+    # def exists_exchange(self, exchange_name: str) -> bool:
+    #     """
+    #     ### Checks if the specified exchange exists.
+    #     ### 익스체인지 존재 여부 확인
+    #     """
+    #     if self._chk_usable():
+    #         try:
+    #             # Passive mode: If exchange exists, it will return. If not, it will raise an error
+    #             self._channel.exchange_declare(exchange=exchange_name, passive=True)
+    #             return True  # Exchange exists
+    #         except pika.exceptions.AMQPError:  # Catch any AMQP errors (exchange not found)
+    #             return False  # Exchange doesn't exist
+    #         except pika.exceptions.ChannelClosedByBroker:
+    #             # Handle channel closure but do not break connection.
+    #             print("Channel closed by broker. Attempting to reopen the channel.")
+    #             # Optionally, add a channel reopening mechanism here
+    #             return False  # Return False since exchange doesn't exist
+    #         except Exception as e:
+    #             print(f"Unexpected error: {e}")
+    #             return False
+    #     else:
+    #         print("Connection or channel is not usable")
+    #         return False
+
+
+
+    # def exists_queue(self, queue_name: str) -> bool:
+    #     """
+    #     ### Checks if the specified queue exists.
+    #     ### 큐 존재 여부 확인
+    #     """
+    #     if self._chk_usable():
+    #         try:
+    #             self._channel.queue_declare(queue=queue_name, passive=True)
+    #             return True  # Queue exists
+    #         except pika.exceptions.AMQPError:  # Catch any AMQP errors (queue not found)
+    #             return False  # Queue doesn't exist
+    #         except pika.exceptions.ChannelClosedByBroker:
+    #             print("Channel closed by broker. Attempting to reopen the channel.")
+    #             if not self.declare_channel():
+    #                 print("Failed to declare a new channel.")
+    #             return False  # Return False since queue doesn't exist
+    #         except Exception as e:
+    #             print(f"Unexpected error: {e}")
+    #             return False
+    #     else:
+    #         print("Connection or channel is not usable")
+    #         return False
+
+    # def exists_bind(self, exchange: str, queue_name: str, routing_key: str) -> bool:
+    #     """
+    #     ### Checks if the specified binding exists.
+    #     ### 바인딩 존재 여부 확인
+    #     """
+    #     if self._chk_usable():
+    #         try:
+    #             bindings = self._channel.queue_bindings(queue=queue_name)
+    #             for binding in bindings:
+    #                 if binding['exchange'] == exchange and binding['routing_key'] == routing_key:
+    #                     return True
+    #             return False
+    #         except pika.exceptions.AMQPError as e:
+    #             print(f"AMQP Error while checking binding: {e}")
+    #             return False
+    #         except pika.exceptions.ChannelClosedByBroker:
+    #             # Handle channel closure but do not break connection.
+    #             print("Channel closed by broker. Attempting to reopen the channel.")
+    #             # Optionally, add a channel reopening mechanism here
+    #             return False  # Return False since binding doesn't exist
+    #         except Exception as e:
+    #             print(f"Unexpected error: {e}")
+    #             return False
+    #     else:
+    #         print("Connection or channel is not usable")
+    #         return False
+        
+        
     
     
     def declare_channel(self) -> bool:
@@ -71,33 +152,60 @@ class PikaRabbitMQ:
         
         return True
         
-    def declare_queue(self, queue_name):
+     
+    def declare_queue(self, queue_name, durable=False, exclusive=False, auto_delete=False, arguments=None):
         """
-        ### Declares a queue with the specified
-        ### 큐 생성
+        ### Declares a queue with the specified name and options.
+        ### 큐 생성 (상세 옵션 포함)
+        - `durable`: 큐가 서버 재시작 후에도 유지되도록 설정 (기본 False)
+        - `exclusive`: 해당 큐가 연결에만 사용되고, 연결이 종료되면 삭제되도록 설정 (기본 False)
+        - `auto_delete`: 소비자가 없으면 큐가 자동으로 삭제되도록 설정 (기본 False)
+        - `arguments`: 추가적인 큐 설정 파라미터 (기본 None)
         """
         if self._chk_usable():
-            self._channel.queue_declare(queue=queue_name)
+            self._channel.queue_declare(
+                queue=queue_name,
+                durable=durable,
+                exclusive=exclusive,
+                auto_delete=auto_delete,
+                arguments=arguments
+            )
         else:
             print("connection or channel is not usable")
-        
-    def declare_exchange(self, exchange_name: str, exchange_type: str = 'direct'):
+    
+    def declare_exchange(self, exchange_name: str, exchange_type: str = 'direct', durable=False, auto_delete=False, arguments=None):
         """
-        ### Declares an exchange with the specified name.
-        ### 익스체인지 생성
+        ### Declares an exchange with the specified name and options.
+        ### 익스체인지 생성 (상세 옵션 포함)
+        - `exchange_type`: 익스체인지 유형 (기본 'direct')
+        - `durable`: 익스체인지가 서버 재시작 후에도 유지되도록 설정 (기본 False)
+        - `auto_delete`: 소비자가 없으면 익스체인지가 자동으로 삭제되도록 설정 (기본 False)
+        - `arguments`: 추가적인 익스체인지 설정 파라미터 (기본 None)
         """
         if self._chk_usable():
-            self._channel.exchange_declare(exchange=exchange_name, exchange_type=exchange_type)
+            self._channel.exchange_declare(
+                exchange=exchange_name,
+                exchange_type=exchange_type,
+                durable=durable,
+                auto_delete=auto_delete,
+                arguments=arguments
+            )
         else:
             print("connection or channel is not usable")
-        
-    def bind_queue(self, exchange: str, queue_name: str, routing_key: str):
+    
+    def bind_queue(self, exchange: str, queue_name: str, routing_key: str, arguments=None):
         """
-        ### Binds a queue to an exchange with the specified routing key.
-        ### 큐 바인딩
+        ### Binds a queue to an exchange with the specified routing key and options.
+        ### 큐 바인딩 (상세 옵션 포함)
+        - `arguments`: 바인딩 설정에 추가적인 파라미터
         """
         if self._chk_usable():
-            self._channel.queue_bind(exchange=exchange, queue=queue_name, routing_key=routing_key)
+            self._channel.queue_bind(
+                exchange=exchange,
+                queue=queue_name,
+                routing_key=routing_key,
+                arguments=arguments
+            )
         else:
             print("connection or channel is not usable")
     
@@ -149,7 +257,6 @@ class PikaRabbitMQ:
         ### Publishes a message to the specified queue.
         ### 메세지 기본 발행
         """
-        print("publishing", self._chk_usable(), self._chk_conn())
         if self._chk_usable():
             self._channel.basic_publish(exchange=exchange, routing_key=routing_key, body=message,)
         else:
@@ -157,21 +264,31 @@ class PikaRabbitMQ:
         
         
         
-    def b_consume(self, queue_name: str, callback, delay_microseconds: int = 0):
+    def b_consume(self, queue_name: str, callback, delay_sec: int = 0):
         """
         ### Consumes a message from the specified queue with an optional delay after callback execution. 
         ### 메세지 기본 소비 (데코레이드 속도 강제 설정 포함)
         """
         def decorated_callback(ch, method, properties, body):
             callback(ch, method, properties, body)
-            if delay_microseconds > 0:
-                time.sleep(delay_microseconds / 1_000_000)
+            time.sleep(delay_sec)
 
         if self._chk_usable():
             self._channel.basic_consume(queue=queue_name, on_message_callback=decorated_callback, auto_ack=True)
             self._channel.start_consuming()
         else:
             print("connection or channel is not usable")
+        
+    def stop_consuming(self):
+        """
+        ### Stops consuming messages from the queue.
+        ### 메세지 소비 중지
+        """
+        if self._chk_usable():
+            self._channel.stop_consuming()
+        else:
+            print("connection or channel is not usable")
+        
         
     def close(self):
         """

@@ -58,7 +58,7 @@ client_start(
     db_rds_connection=rds_connection,
     db_mq_connection=rabbit_mq,
     roots=[
-        Scrapper_Root('google', 'https://www.google.com', option),
-        Scrapper_Root('tennisreact_react_parsing_test', 'https://tennisreact.netlify.app', option),
+        Scrapper_Root('google', access_rule=option, root_uri='https://www.google.com/search?q=illegal+drug+dealer+onion&sca_esv=e1bc306dcb0911c4&sxsrf=AHTn8zrGlBOL_M0ZanIb6qofVWRZu9qO7Q%3A1743102271430&ei=P6HlZ8SGGsvf2roPnZ-XgAI&ved=0ahUKEwiEosj9-aqMAxXLr1YBHZ3PBSAQ4dUDCBA&uact=5&oq=illegal+drug+dealer+onion&gs_lp=Egxnd3Mtd2l6LXNlcnAiGWlsbGVnYWwgZHJ1ZyBkZWFsZXIgb25pb24yBxAhGKABGAoyBxAhGKABGAoyBBAhGBUyBBAhGBUyBBAhGApI4hFQ_QRY9xBwAXgAkAEAmAGZAaABoQWqAQMwLjW4AQPIAQD4AQGYAgWgAqsEwgIJEAAYsAMYBxgewgIJEAAYsAMYCBgewgIFECEYoAGYAwCIBgGQBgaSBwMxLjSgB9gSsgcDMC40uAepBA&sclient=gws-wiz-serp'),
+        Scrapper_Root('tennisreact_react_parsing_test', access_rule=option, root_uri='https://tennisreact.netlify.app'),
     ]
 )
