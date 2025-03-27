@@ -26,6 +26,58 @@ https://huggingface.co/
 그 외 설정 저장 등. 해야 함. 
 
 
+지금은 대충 이런 느낌으로.
+라이브러리 사용 시 느낌도 중요하니.. 개선할 부분은 개선하는게 맞지.
+```python
+from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.module import client_start
+from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.abstract.rds.predef import DatabaseType
+from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.connection_info import Connection_Info
+from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.scrapper_root import Scrapper_Root
+from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.scrapper_root_access_rule import Scrapper_Root_Access_Rule
+
+
+# create rds db connection
+rds_connection = Connection_Info()
+rds_connection.db_type = DatabaseType.SQLITE3
+rds_connection.database = "test.db"
+
+
+# queue connection
+rabbit_mq = Connection_Info()
+rabbit_mq.db_type = DatabaseType.RABBITMQ
+rabbit_mq.host = "localhost"
+rabbit_mq.port = 5672
+rabbit_mq.user = "test_user"
+rabbit_mq.password = "1234"
+rabbit_mq.vhost = "/"
+
+
+
+
+# start client example
+client_start(
+    db_rds_connection=rds_connection,
+    db_mq_connection=rabbit_mq,
+    roots=[
+        Scrapper_Root('google', 'https://www.google.com', Scrapper_Root_Access_Rule(
+            
+            # Whether to skip duplicate URIs (If False, it may endlessly loop on a specific page.)
+            skip_duplication_uri=True, 
+            
+            # Whether to refresh duplicate URIs (Refreshing means re-evaluating and scoring the URI.)
+            refresh_duplicate_uri=True, 
+            
+            # Threshold count of duplicate URIs before refreshing
+            refresh_duplicate_uri_count=10 
+            
+            )),
+    ]
+)
+```
+
+
+
+
 #### 2025.03.27 (2)
 
 좀 잠좀 자고

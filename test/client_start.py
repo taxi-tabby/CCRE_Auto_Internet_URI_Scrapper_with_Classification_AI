@@ -26,6 +26,7 @@ rds_connection.db_type = DatabaseType.SQLITE3
 rds_connection.database = "test.db"
 
 
+# queue connection
 rabbit_mq = Connection_Info()
 rabbit_mq.db_type = DatabaseType.RABBITMQ
 rabbit_mq.host = "localhost"
@@ -44,13 +45,14 @@ client_start(
     roots=[
         Scrapper_Root('google', 'https://www.google.com', Scrapper_Root_Access_Rule(
             
-            # URI 중복을 건너뛰는지 여부 (False 인 경우 특정 페이지를 무한하게 순환할 가능성이 있음.)
-            skip_duplication_uri=False, 
+            # Whether to skip duplicate URIs (If False, it may endlessly loop on a specific page.)
+            skip_duplication_uri=True, 
             
-            # URI 중복을 갱신하는지 여부 (갱신은 해당 URI를 다시 분별하고 점수를 매기는 것을 의미합니다)
-            refresh_duplicate_uri=False, 
-            # URI 중복이 어느정도 누적되면 갱신할지 
-            refresh_duplicate_uri_count=0 
+            # Whether to refresh duplicate URIs (Refreshing means re-evaluating and scoring the URI.)
+            refresh_duplicate_uri=True, 
+            
+            # Threshold count of duplicate URIs before refreshing
+            refresh_duplicate_uri_count=10 
             
             )),
     ]
