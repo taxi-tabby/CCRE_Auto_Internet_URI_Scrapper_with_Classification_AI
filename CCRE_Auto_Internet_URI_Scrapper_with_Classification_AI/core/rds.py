@@ -142,12 +142,22 @@ def get_exists_branch(db: Session, root_id: int, branch_uri: str) -> bool:
     """
     return db.query(Branches).filter_by(root_id=root_id, branch_uri=branch_uri).first() is not None
 
+def get_branch_id_if_exists(db: Session, root_id: int, branch_uri: str) -> int | None:
+    """
+    루트에 해당하는 브랜치가 존재하면 branch의 id를 반환하고,
+    존재하지 않으면 None을 반환
+    """
+    branch = db.query(Branches).filter_by(root_id=root_id, branch_uri=branch_uri).first()
+    return branch.id if branch else None
 
-def update_branches(db: Session, branches: list[Branches]):
+
+def update_branches(db: Session, branches: list[Branches]) -> list[int]:
     """
     branches 리스트를 순회하며 branch_uri가 없는 경우 새로 등록하고,
     이미 존재하는 경우 변경사항이 있으면 업데이트합니다.
+    생성된 branch의 id를 반환합니다.
     """
+    created_ids = []
     try:
         with db.begin():  # 트랜잭션 시작
             for branch in branches:
@@ -163,6 +173,8 @@ def update_branches(db: Session, branches: list[Branches]):
                     # 새로운 branch 추가
                     new_branch = Branches(root_id=branch.root_id, branch_uri=branch.branch_uri)
                     db.add(new_branch)
+                    db.flush()  # 새로 추가된 객체의 id를 가져오기 위해 flush 호출
+                    created_ids.append(new_branch.id)
                     
     except SQLAlchemyError as e:
         print(f"SQLAlchemyError occurred: {str(e)}")
@@ -175,3 +187,5 @@ def update_branches(db: Session, branches: list[Branches]):
         except Exception as e:
             print(f"Commit failed: {str(e)}")
             db.rollback()
+    
+    return created_ids

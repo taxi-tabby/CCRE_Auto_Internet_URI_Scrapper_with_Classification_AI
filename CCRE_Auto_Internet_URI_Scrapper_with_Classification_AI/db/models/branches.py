@@ -1,7 +1,8 @@
 
+from datetime import datetime
 from typing import List
 from typing import Optional
-from sqlalchemy import BigInteger, ForeignKey, Index, Integer, Text, text
+from sqlalchemy import BigInteger, DateTime, ForeignKey, Index, Integer, Text, text
 from sqlalchemy import String
 from sqlalchemy.orm import DeclarativeBase, declarative_base
 from sqlalchemy.orm import Mapped
@@ -21,14 +22,21 @@ class Branches(Base):
     # 고유번호
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True, type_=Integer)
     
+    # 부모 브랜치 id
+    parent_id: Mapped[Optional[int]] = mapped_column(ForeignKey("branches.id"), nullable=True, type_=Integer)
+    
     # 루트 id
     root_id: Mapped[int] = mapped_column(ForeignKey("roots.id"), nullable=False, type_=Integer)
+    
     
     # 브랜치에서 검색할 uri
     branch_uri: Mapped[str] = mapped_column(type_=Text, nullable=False)
     
     # 중복 검색 횟수
     _duplicate_count: Mapped[int] = mapped_column(type_=Integer, default=0)
+    
+    # 추가된 일자
+    created_at: Mapped[datetime] = mapped_column(type_=DateTime, server_default=text("CURRENT_TIMESTAMP"), nullable=False)  
     
     
     # 인덱스 설정

@@ -1,7 +1,8 @@
 
+from datetime import datetime
 from typing import List
 from typing import Optional
-from sqlalchemy import BigInteger, ForeignKey, Index, Integer, Text, text
+from sqlalchemy import BigInteger, DateTime, ForeignKey, Index, Integer, Text, text
 from sqlalchemy import String
 from sqlalchemy.orm import DeclarativeBase, declarative_base
 from sqlalchemy.orm import Mapped
@@ -31,6 +32,9 @@ class Leaves(Base):
     # 식별된 데이터 문자열
     val_classified: Mapped[str] = mapped_column(type_=Text, nullable=False)
     
+    
+    # 추가된 일자
+    created_at: Mapped[datetime] = mapped_column(type_=DateTime, server_default=text("CURRENT_TIMESTAMP"), nullable=False)  
     
     __table_args__ = (
         Index('default_leaves_index', 'root_id', 'branch_id', 'id'),

@@ -32,6 +32,26 @@ https://huggingface.co/
 ### devlog
 
 
+
+#### 2025.03.28 (2)
+
+
+> image test1
+```json
+{
+    "url": "https://s.pstatic.net/dthumb.phinf/?src=%22https%3A%2F%2Fhappybean-phinf.pstatic.net%2F20250212_125%2F1739350096803zkPOL_JPEG%2F%25B8%25EB%25A4%25EC312314.jpg%3Ftype%3Df464_260%22&type=nf365_240&service=navermain",
+    "ext": null,
+    "is_relative": false,
+    "classified": "http",
+    "id": null
+}
+```
+
+흠흠.. selenium 부분을 좀 빨리 해야겠음.
+요즘 다 js 기반이라 대다수 사이트에서 먹통임.흠흠
+
+
+
 #### 2025.03.28 (1)
 
 

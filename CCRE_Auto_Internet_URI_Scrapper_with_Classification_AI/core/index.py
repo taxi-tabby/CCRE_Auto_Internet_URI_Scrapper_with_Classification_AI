@@ -5,11 +5,12 @@ from sqlalchemy import text
 from urllib.parse import urlparse
 
 
-from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.rds import get_exists_branch, get_root_branch_count, table_init, get_roots_list, update_branches, update_roots
+from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.rds import get_branch_id_if_exists, get_exists_branch, get_root_branch_count, table_init, get_roots_list, update_branches, update_roots
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.crawing import fetch_with_redirects
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.parser.json import parse_json_string
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.parser.uri import normalize_uri_path
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.parser.xml import  extract_links_from_xml
+from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.string import shorten_string
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.stringify.json import stringify_to_json
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.connection_info import Connection_Info
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.pika_rabbitmq import PikaRabbitMQ
@@ -18,7 +19,13 @@ from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.sql
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.thread_manager import ThreadManager
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.db.models import *
 from .import_path import add_module_path
+from datetime import datetime
 
+
+def thlog(root_key, *args):
+    """쓰레드 로그 출력용 함수."""
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(f"[{current_time}] [{root_key}] {' '.join(args)}")
 
 
 def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_session: PikaRabbitMQ, ):
@@ -29,7 +36,7 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
         mq_session (PikaRabbitMQ): 메세지 큐를 요청하거나 소비하기 위한 세션
     """
     
-    print(f"worker start: {root.root_key}")
+    thlog(root.root_key, f"worker start")
     
     config = {
         'exchange_name': f'{root.root_key}.exchange',
@@ -51,7 +58,7 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
     mq_session.bind_queue(config['exchange_name'], config['queue_name'], config['route_key'])
     
     
-    def crawling_and_queuing(uri: str):
+    def crawling_and_queuing(id: int | None, uri: str):
         try:
             custom_headers = {
                 "User-Agent": "CCRE_URI_CRAWING", 
@@ -60,12 +67,16 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
             final_response = fetch_with_redirects(uri, headers=custom_headers, max_redirects=3)
             links = extract_links_from_xml(final_response['body'])
             for link in links:
+                link['id'] = id
                 mq_session.b_publish(config['exchange_name'], config['route_key'], stringify_to_json(link))
                 
         except Exception as e:
-            print(e)
+            thlog(root.root_key, 'crawling except - ',e)
             pass
 
+
+
+    # 루트에 브렌치 데이터가 없으면 크롤링 요청
     flag_branch_no_exists = False 
     with db_session.get_db() as db:
         cnt = get_root_branch_count(db, root.id)
@@ -73,54 +84,83 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
             flag_branch_no_exists = True
     
     
+
     # 최초에 브렌치 데이터 없으면 요청해서 메세지 큐를 생성. 
     if flag_branch_no_exists:
         try:
-            crawling_and_queuing(root.root_uri)
-            print(f" [{root.root_key}] first branch creation done")
+            crawling_and_queuing(None, root.root_uri)
+            thlog(root.root_key, f"first branch creation done")
         except Exception as e:
-            raise (f"root init crawling err occ: {e}")
+            thlog(root.root_key, f"root init crawling error", e)
+        
+    
+    
+        
         
     # 메세지 큐 소비 처리
     def callback(ch: pika.channel.Channel, method: pika.spec.Basic.Deliver, properties: pika.spec.BasicProperties, body: bytes):
         obj = parse_json_string(body)
-        print(f" [{root.root_key}] Queue received {obj}")
+        thlog(root.root_key, f"Queue received: uri:{shorten_string(obj['url'], 40)}, relative:{obj['is_relative']}")
         
-        def dup_chk(root_id: int, uri: str) -> bool:
-            is_exists = False
+        def dup_chk(root_id: int, uri: str) -> (int | None):
             with db_session.get_db() as db:
-                if get_exists_branch(db, root_id, uri):
-                    is_exists = True
-            return is_exists
+                return get_branch_id_if_exists(db, root_id, uri)
 
 
-        def branch_up(uri: str):
+
+        def branch_up(id: int | None, uri: str) -> (int | None):
             with db_session.get_db() as db:
                 branch = Branches()
                 branch.id = None
+                branch.parent_id = id
                 branch.root_id = root.id
                 branch.branch_uri = uri
-                update_branches(db, branches=[branch])
+                ids = update_branches(db, branches=[branch])
+                if ids:
+                    return ids[0]
+                return None
 
         try:
             if obj['is_relative']:
+                # 상대경로
                 parsed_url = urlparse(root.root_uri)
                 assembled_uri_with_path = normalize_uri_path(f"{parsed_url.scheme}://{parsed_url.netloc}{parsed_url.path}{obj['url']}")
                 assembled_uri_no_path = normalize_uri_path(f"{parsed_url.scheme}://{parsed_url.netloc}{obj['url']}")
                 
-                if not dup_chk(root.id, assembled_uri_with_path):
-                    branch_up(assembled_uri_with_path)
-                    crawling_and_queuing(assembled_uri_with_path)
+                d1 = dup_chk(root.id, assembled_uri_with_path)
+                d1_id = obj['id']
+                d2 = dup_chk(root.id, assembled_uri_no_path)
+                d2_id = obj['id']
+                
+                if not d1 == None:
+                    d1_id = d1 
                     
-                if not dup_chk(root.id, assembled_uri_no_path):
-                    branch_up(assembled_uri_no_path)
-                    crawling_and_queuing(assembled_uri_no_path)
+                if not d2 == None:
+                    d2_id = d2 
+                
+                if d1 == None:
+                    id = branch_up(d1_id, assembled_uri_with_path)
+                    if not id == None:
+                        crawling_and_queuing(id, assembled_uri_with_path)
+                    
+                if d2 == None:
+                    id = branch_up(d2_id, assembled_uri_no_path)
+                    if not id == None:
+                        crawling_and_queuing(id, assembled_uri_no_path)
                 
             else:
+                # 절대경로
                 assembled_uri = normalize_uri_path(obj['url'])
+                dd = dup_chk(root.id, assembled_uri)
+                dd_id = obj['id']
+                
+                if not dd == None:
+                    dd_id = dd
+                
                 if not dup_chk(root.id, assembled_uri):
-                    branch_up(assembled_uri)
-                    crawling_and_queuing(assembled_uri)
+                    id = branch_up(dd_id, assembled_uri)
+                    if not id == None:
+                        crawling_and_queuing(id, assembled_uri)
                 
 
 
@@ -129,15 +169,13 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
         except Exception as e:
             pass
         
-    print('start consuming')
+    thlog(root.root_key, f'start consuming')
     
     # 메세지 큐 소비
-    mq_session.b_consume(config['queue_name'], callback, delay_sec=1)
-
-
-
+    mq_session.b_consume(config['queue_name'], callback, delay_sec=3)
     
-    print(f"worker process complete: {root.root_key}")
+    # 쓰레드 종료 메세지
+    thlog(root.root_key, f"worker process complete")
     
 
 

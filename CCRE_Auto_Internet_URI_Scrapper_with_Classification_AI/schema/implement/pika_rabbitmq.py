@@ -38,6 +38,14 @@ class PikaRabbitMQ:
     
     
     
+    def _chk_channel(self) -> bool:
+        """
+        ### Check channel
+        ### 채널만 확인
+        """
+        if self._channel is None:
+            return False
+        return True
     
     def _chk_conn(self) -> bool:
         """
@@ -302,7 +310,7 @@ class PikaRabbitMQ:
         ### Stops consuming messages from the queue.
         ### 메세지 소비 중지
         """
-        if self._chk_usable():
+        if self._chk_channel():
             self._channel.stop_consuming()
         else:
             print("connection or channel is not usable")
