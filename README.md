@@ -8,8 +8,18 @@
 ### dependency:
 - sqlalchemy (data storage)
 - pika (rabbitmq)
-- pyclamd (codesniff check)
 
+### dependency (for anti-virus content check):
+- yara, maltrail
+- pyclamd
+-  
+
+### features
+- crawling
+
+### additional features
+- Distributed bypass ICMP check (openvpn)
+- Scan after Javascript rendering (selenium)
 
 
 ### ref

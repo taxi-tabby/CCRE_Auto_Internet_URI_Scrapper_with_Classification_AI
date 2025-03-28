@@ -1,9 +1,14 @@
 import time
 
+import pika
 from sqlalchemy import text
-from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.rds import get_root_branch_count, table_init, get_roots_list, update_roots
+from urllib.parse import urlparse
+
+
+from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.rds import get_exists_branch, get_root_branch_count, table_init, get_roots_list, update_branches, update_roots
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.crawing import fetch_with_redirects
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.parser.json import parse_json_string
+from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.parser.uri import normalize_uri_path
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.parser.xml import  extract_links_from_xml
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.stringify.json import stringify_to_json
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.connection_info import Connection_Info
@@ -46,20 +51,20 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
     mq_session.bind_queue(config['exchange_name'], config['queue_name'], config['route_key'])
     
     
-    def crawing_and_queuing(uri: str):
+    def crawling_and_queuing(uri: str):
         try:
             custom_headers = {
                 "User-Agent": "CCRE_URI_CRAWING", 
                 "User-Agent-Source": "https://github.com/taxi-tabby/CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI"
                 }
-            final_response = fetch_with_redirects(uri, headers=custom_headers, max_redirects=5)
+            final_response = fetch_with_redirects(uri, headers=custom_headers, max_redirects=3)
             links = extract_links_from_xml(final_response['body'])
-            
             for link in links:
                 mq_session.b_publish(config['exchange_name'], config['route_key'], stringify_to_json(link))
                 
         except Exception as e:
-            print(f"Error: {e}")
+            print(e)
+            pass
 
     flag_branch_no_exists = False 
     with db_session.get_db() as db:
@@ -70,21 +75,64 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
     
     # 최초에 브렌치 데이터 없으면 요청해서 메세지 큐를 생성. 
     if flag_branch_no_exists:
-        crawing_and_queuing(root.root_uri)
+        try:
+            crawling_and_queuing(root.root_uri)
+            print(f" [{root.root_key}] first branch creation done")
+        except Exception as e:
+            raise (f"root init crawling err occ: {e}")
         
     # 메세지 큐 소비 처리
-    def callback(ch, method, properties, body):
+    def callback(ch: pika.channel.Channel, method: pika.spec.Basic.Deliver, properties: pika.spec.BasicProperties, body: bytes):
         obj = parse_json_string(body)
+        print(f" [{root.root_key}] Queue received {obj}")
+        
+        def dup_chk(root_id: int, uri: str) -> bool:
+            is_exists = False
+            with db_session.get_db() as db:
+                if get_exists_branch(db, root_id, uri):
+                    is_exists = True
+            return is_exists
 
-        assembled_uri = obj['url']
-        if obj['is_relative']:
-            assembled_uri = root.root_uri + obj['url']
-            
-        print(f" [{root.root_key}] Queue received {obj} and crawling {assembled_uri}")
-        crawing_and_queuing(assembled_uri)
+
+        def branch_up(uri: str):
+            with db_session.get_db() as db:
+                branch = Branches()
+                branch.id = None
+                branch.root_id = root.id
+                branch.branch_uri = uri
+                update_branches(db, branches=[branch])
+
+        try:
+            if obj['is_relative']:
+                parsed_url = urlparse(root.root_uri)
+                assembled_uri_with_path = normalize_uri_path(f"{parsed_url.scheme}://{parsed_url.netloc}{parsed_url.path}{obj['url']}")
+                assembled_uri_no_path = normalize_uri_path(f"{parsed_url.scheme}://{parsed_url.netloc}{obj['url']}")
+                
+                if not dup_chk(root.id, assembled_uri_with_path):
+                    branch_up(assembled_uri_with_path)
+                    crawling_and_queuing(assembled_uri_with_path)
+                    
+                if not dup_chk(root.id, assembled_uri_no_path):
+                    branch_up(assembled_uri_no_path)
+                    crawling_and_queuing(assembled_uri_no_path)
+                
+            else:
+                assembled_uri = normalize_uri_path(obj['url'])
+                if not dup_chk(root.id, assembled_uri):
+                    branch_up(assembled_uri)
+                    crawling_and_queuing(assembled_uri)
+                
+
+
+
+
+        except Exception as e:
+            pass
+        
+    print('start consuming')
     
     # 메세지 큐 소비
-    mq_session.b_consume(config['queue_name'], callback, delay_sec=0.1)
+    mq_session.b_consume(config['queue_name'], callback, delay_sec=1)
 
 
 

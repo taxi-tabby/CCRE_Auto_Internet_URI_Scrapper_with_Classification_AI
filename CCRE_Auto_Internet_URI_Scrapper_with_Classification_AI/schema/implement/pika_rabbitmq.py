@@ -1,6 +1,9 @@
 import pika
 import time
 
+import pika.channel
+import pika.spec
+
 
 class PikaRabbitMQ:
     """
@@ -168,10 +171,12 @@ class PikaRabbitMQ:
                 durable=durable,
                 exclusive=exclusive,
                 auto_delete=auto_delete,
-                arguments=arguments
+                arguments=arguments,
             )
         else:
             print("connection or channel is not usable")
+            
+            
     
     def declare_exchange(self, exchange_name: str, exchange_type: str = 'direct', durable=False, auto_delete=False, arguments=None):
         """
@@ -252,24 +257,37 @@ class PikaRabbitMQ:
         
         
         
-    def b_publish(self, exchange: str, routing_key: str, message: str | bytes):
+    def b_publish(self, exchange: str, routing_key: str, message: str | bytes, properties: pika.BasicProperties = None):
         """
         ### Publishes a message to the specified queue.
         ### 메세지 기본 발행
         """
         if self._chk_usable():
-            self._channel.basic_publish(exchange=exchange, routing_key=routing_key, body=message,)
+            
+            if properties is None:
+                properties = pika.BasicProperties(delivery_mode=2)
+                
+            self._channel.basic_publish(exchange=exchange, routing_key=routing_key, body=message, properties=properties, )
+            
         else:
             print("connection or channel is not usable")
         
         
-        
+
     def b_consume(self, queue_name: str, callback, delay_sec: int = 0):
         """
         ### Consumes a message from the specified queue with an optional delay after callback execution. 
         ### 메세지 기본 소비 (데코레이드 속도 강제 설정 포함)
         """
-        def decorated_callback(ch, method, properties, body):
+        
+        
+        # Required function for dispatching messages to user, having the signature: 
+        # on_message_callback(channel, method, properties, body) 
+        # - channel: BlockingChannel 
+        # - method: spec.Basic.Deliver 
+        # - properties: spec.BasicProperties 
+        # - body: bytes
+        def decorated_callback(ch: pika.channel.Channel, method: pika.spec.Basic.Deliver, properties: pika.spec.BasicProperties, body: bytes) -> None:
             callback(ch, method, properties, body)
             time.sleep(delay_sec)
 

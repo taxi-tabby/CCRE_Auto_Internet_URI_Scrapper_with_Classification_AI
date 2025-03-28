@@ -1,4 +1,5 @@
 
+import json
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.abstract.core.access_rule import CCRE_AI_Scrapper_Access_Rule
 
 
@@ -42,3 +43,11 @@ class Scrapper_Root_Access_Rule(CCRE_AI_Scrapper_Access_Rule):
     @refresh_duplicate_uri_count.setter
     def refresh_duplicate_uri_count(self, value: int):
         self._refresh_duplicate_uri_count = value
+        
+    def to_json(self) -> str:
+        """Convert the internal variables to a JSON string."""
+        return json.dumps({
+            "skip_duplication_uri": self._skip_duplication_uri,
+            "refresh_duplicate_uri": self._refresh_duplicate_uri,
+            "refresh_duplicate_uri_count": self._refresh_duplicate_uri_count
+        })

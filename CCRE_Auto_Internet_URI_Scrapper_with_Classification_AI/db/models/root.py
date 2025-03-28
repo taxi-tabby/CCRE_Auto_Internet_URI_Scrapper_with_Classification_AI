@@ -27,6 +27,8 @@ class Roots(Base):
     # 루트 uri
     root_uri: Mapped[str] = mapped_column(type_=Text, nullable=False)
     
+    # 규칙 JSON
+    rules: Mapped[str] = mapped_column(type_=Text, nullable=False)
     
     __table_args__ = (
         Index('default_root_index', 'root_key', 'root_uri'),
