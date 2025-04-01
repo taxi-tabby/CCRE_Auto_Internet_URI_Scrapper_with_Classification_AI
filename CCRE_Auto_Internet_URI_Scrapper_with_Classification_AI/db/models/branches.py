@@ -24,6 +24,7 @@ class Branches(Base):
     
     # 부모 브랜치 id
     parent_id: Mapped[Optional[int]] = mapped_column(ForeignKey("branches.id"), nullable=True, type_=Integer)
+    # parent_id: Mapped[Optional[int]] = mapped_column(nullable=True, type_=Integer, default=None)
     
     # 루트 id
     root_id: Mapped[int] = mapped_column(ForeignKey("roots.id"), nullable=False, type_=Integer)

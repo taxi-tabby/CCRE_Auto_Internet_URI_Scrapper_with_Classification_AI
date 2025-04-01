@@ -282,28 +282,58 @@ class PikaRabbitMQ:
         
         
 
+    # def b_consume(self, queue_name: str, callback, delay_sec: int = 0):
+    #     """
+    #     ### Consumes a message from the specified queue with an optional delay after callback execution. 
+    #     ### 메세지 기본 소비 (데코레이드 속도 강제 설정 포함)
+    #     """
+        
+        
+    #     # Required function for dispatching messages to user, having the signature: 
+    #     # on_message_callback(channel, method, properties, body) 
+    #     # - channel: BlockingChannel 
+    #     # - method: spec.Basic.Deliver 
+    #     # - properties: spec.BasicProperties 
+    #     # - body: bytes
+    #     def decorated_callback(ch: pika.channel.Channel, method: pika.spec.Basic.Deliver, properties: pika.spec.BasicProperties, body: bytes) -> None:
+    #         callback(ch, method, properties, body)
+    #         time.sleep(delay_sec)
+
+    #     if self._chk_usable():
+    #         self._channel.basic_consume(queue=queue_name, on_message_callback=decorated_callback, auto_ack=True)
+    #         self._channel.start_consuming()
+    #     else:
+    #         print("connection or channel is not usable")
+        
     def b_consume(self, queue_name: str, callback, delay_sec: int = 0):
         """
-        ### Consumes a message from the specified queue with an optional delay after callback execution. 
-        ### 메세지 기본 소비 (데코레이드 속도 강제 설정 포함)
+        Consumes a message from the specified queue with an optional delay after callback execution.
         """
         
-        
-        # Required function for dispatching messages to user, having the signature: 
-        # on_message_callback(channel, method, properties, body) 
-        # - channel: BlockingChannel 
-        # - method: spec.Basic.Deliver 
-        # - properties: spec.BasicProperties 
+        # Required function for dispatching messages to user, having the signature:
+        # on_message_callback(channel, method, properties, body)
+        # - channel: BlockingChannel
+        # - method: spec.Basic.Deliver
+        # - properties: spec.BasicProperties
         # - body: bytes
         def decorated_callback(ch: pika.channel.Channel, method: pika.spec.Basic.Deliver, properties: pika.spec.BasicProperties, body: bytes) -> None:
             callback(ch, method, properties, body)
-            time.sleep(delay_sec)
-
+            
+            # Optional delay after callback execution
+            if delay_sec > 0:
+                # print(f"Delaying message acknowledgment for {delay_sec} seconds...")
+                time.sleep(delay_sec)
+            
+            # After delay, acknowledge the message
+            ch.basic_ack(delivery_tag=method.delivery_tag)
+        
         if self._chk_usable():
-            self._channel.basic_consume(queue=queue_name, on_message_callback=decorated_callback, auto_ack=True)
+            # Disable auto_ack (set to False) to handle acknowledgment manually
+            self._channel.basic_consume(queue=queue_name, on_message_callback=decorated_callback, auto_ack=False)
             self._channel.start_consuming()
         else:
-            print("connection or channel is not usable")
+            print("Connection or channel is not usable.")
+        
         
     def stop_consuming(self):
         """

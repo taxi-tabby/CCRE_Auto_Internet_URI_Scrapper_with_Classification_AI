@@ -8,6 +8,7 @@
 ### dependency:
 - sqlalchemy (data storage)
 - pika (rabbitmq)
+- aiohttp (async http request)
 
 ### dependency (for anti-virus content check):
 - yara, maltrail

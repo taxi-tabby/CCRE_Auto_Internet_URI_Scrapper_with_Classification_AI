@@ -1,3 +1,4 @@
+import asyncio
 import time
 
 import pika
@@ -22,7 +23,7 @@ from .import_path import add_module_path
 from datetime import datetime
 
 
-def thlog(root_key, *args):
+def thlog(root_key: str, *args):
     """쓰레드 로그 출력용 함수."""
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     print(f"[{current_time}] [{root_key}] {' '.join(args)}")
@@ -41,39 +42,43 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
     config = {
         'exchange_name': f'{root.root_key}.exchange',
         'queue_name': f'{root.root_key}.queue',
-        'route_key': f'{root.root_key}.route.#'
+        'route_key': f'{root.root_key}.direct_route'
     }
     
     
 
 
 
-    # if not mq_conn.exists_exchange(config['exchange_name']):
     mq_session.declare_exchange(config['exchange_name'], 'direct', durable=True, )
-        
-    # if not mq_conn.exists_queue(config['queue_name']):
     mq_session.declare_queue(config['queue_name'], durable=True)
-        
-    # if not mq_conn.exists_bind(config['exchange_name'], config['queue_name'], config['route_key']):
     mq_session.bind_queue(config['exchange_name'], config['queue_name'], config['route_key'])
     
     
-    def crawling_and_queuing(id: int | None, uri: str):
+    async def crawling_and_queuing(id: int | None, uri: str):
         try:
             custom_headers = {
                 "User-Agent": "CCRE_URI_CRAWING", 
                 "User-Agent-Source": "https://github.com/taxi-tabby/CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI"
                 }
-            final_response = fetch_with_redirects(uri, headers=custom_headers, max_redirects=3)
+
+            final_response = await fetch_with_redirects(uri, max_redirects=3, headers=custom_headers)
             links = extract_links_from_xml(final_response['body'])
+
+            link_length = len(links)
+            # thlog(root.root_key, f"links count: {link_length} from id : {id}")
+            
+            idx = 0
             for link in links:
+                idx += 1
                 link['id'] = id
-                mq_session.b_publish(config['exchange_name'], config['route_key'], stringify_to_json(link))
+                mq_session.b_publish(config['exchange_name'], config['route_key'], stringify_to_json(link))  
+                # thlog(root.root_key, f"Queue upload [{id}] - {idx}/{link_length}")
+            
                 
+        except ValueError as ve:
+            thlog(root.root_key, 'crawling value error - ', ve)
         except Exception as e:
             thlog(root.root_key, 'crawling except - ',e)
-            pass
-
 
 
     # 루트에 브렌치 데이터가 없으면 크롤링 요청
@@ -88,7 +93,7 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
     # 최초에 브렌치 데이터 없으면 요청해서 메세지 큐를 생성. 
     if flag_branch_no_exists:
         try:
-            crawling_and_queuing(None, root.root_uri)
+            asyncio.run(crawling_and_queuing(None, root.root_uri))
             thlog(root.root_key, f"first branch creation done")
         except Exception as e:
             thlog(root.root_key, f"root init crawling error", e)
@@ -100,7 +105,12 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
     # 메세지 큐 소비 처리
     def callback(ch: pika.channel.Channel, method: pika.spec.Basic.Deliver, properties: pika.spec.BasicProperties, body: bytes):
         obj = parse_json_string(body)
-        thlog(root.root_key, f"Queue received: uri:{shorten_string(obj['url'], 40)}, relative:{obj['is_relative']}")
+        
+        parent_id = obj['id']
+        
+        thlog(root.root_key, f"Queue received: parent_id: {parent_id}, uri:{shorten_string(obj['url'], 40)}, relative:{obj['is_relative']}")
+        
+        
         
         def dup_chk(root_id: int, uri: str) -> (int | None):
             with db_session.get_db() as db:
@@ -124,43 +134,35 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
             if obj['is_relative']:
                 # 상대경로
                 parsed_url = urlparse(root.root_uri)
-                assembled_uri_with_path = normalize_uri_path(f"{parsed_url.scheme}://{parsed_url.netloc}{parsed_url.path}{obj['url']}")
-                assembled_uri_no_path = normalize_uri_path(f"{parsed_url.scheme}://{parsed_url.netloc}{obj['url']}")
+                assembled_uri_with_path = parsed_url.scheme+'://' + normalize_uri_path(f"{parsed_url.netloc}{parsed_url.path}{obj['url']}")
+                assembled_uri_no_path = parsed_url.scheme+'://' + normalize_uri_path(f"{parsed_url.netloc}{obj['url']}")
                 
                 d1 = dup_chk(root.id, assembled_uri_with_path)
-                d1_id = obj['id']
                 d2 = dup_chk(root.id, assembled_uri_no_path)
-                d2_id = obj['id']
                 
-                if not d1 == None:
-                    d1_id = d1 
-                    
-                if not d2 == None:
-                    d2_id = d2 
+
                 
                 if d1 == None:
-                    id = branch_up(d1_id, assembled_uri_with_path)
+                    id = branch_up(parent_id, assembled_uri_with_path)
+                    # print(f"branch id: {parent_id} / {id}")
                     if not id == None:
-                        crawling_and_queuing(id, assembled_uri_with_path)
+                        asyncio.run(crawling_and_queuing(id, assembled_uri_with_path))
                     
                 if d2 == None:
-                    id = branch_up(d2_id, assembled_uri_no_path)
+                    id = branch_up(parent_id, assembled_uri_no_path)
+                    # print(f"branch id: {parent_id} / {id}")
                     if not id == None:
-                        crawling_and_queuing(id, assembled_uri_no_path)
+                        asyncio.run(crawling_and_queuing(id, assembled_uri_no_path))
                 
             else:
                 # 절대경로
-                assembled_uri = normalize_uri_path(obj['url'])
-                dd = dup_chk(root.id, assembled_uri)
-                dd_id = obj['id']
-                
-                if not dd == None:
-                    dd_id = dd
+                assembled_uri = obj['url']
                 
                 if not dup_chk(root.id, assembled_uri):
-                    id = branch_up(dd_id, assembled_uri)
+                    id = branch_up(parent_id, assembled_uri)
+                    # print(f"branch id: {parent_id} / {id}")
                     if not id == None:
-                        crawling_and_queuing(id, assembled_uri)
+                        asyncio.run(crawling_and_queuing(id, assembled_uri))
                 
 
 
@@ -172,7 +174,7 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
     thlog(root.root_key, f'start consuming')
     
     # 메세지 큐 소비
-    mq_session.b_consume(config['queue_name'], callback, delay_sec=3)
+    mq_session.b_consume(config['queue_name'], callback, delay_sec=1)
     
     # 쓰레드 종료 메세지
     thlog(root.root_key, f"worker process complete")

@@ -171,7 +171,7 @@ def update_branches(db: Session, branches: list[Branches]) -> list[int]:
                         
                 else:
                     # 새로운 branch 추가
-                    new_branch = Branches(root_id=branch.root_id, branch_uri=branch.branch_uri)
+                    new_branch = Branches(root_id=branch.root_id, parent_id=branch.parent_id, branch_uri=branch.branch_uri)
                     db.add(new_branch)
                     db.flush()  # 새로 추가된 객체의 id를 가져오기 위해 flush 호출
                     created_ids.append(new_branch.id)
