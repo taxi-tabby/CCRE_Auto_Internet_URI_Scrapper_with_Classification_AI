@@ -193,6 +193,7 @@ def parse_http_response(response: Dict[str, Union[Dict[str, str], bytes]]) -> Di
         # 상태 코드 추출 (헤더에서 추출)
         status_code = headers.get("status_code", 200)  # 기본 상태 코드 200
         status_message = headers.get("status_message", "OK")
+        content_type = headers.get("Content-Type", "unknown")
         http_version = headers.get("http_version", "HTTP/1.1")
 
         # 본문을 안전하게 디코딩 (UTF-8로 시도, 실패 시 'latin-1'을 사용)
@@ -207,6 +208,7 @@ def parse_http_response(response: Dict[str, Union[Dict[str, str], bytes]]) -> Di
             "status_code": status_code,
             "status_message": status_message,
             "http_version": http_version,
+            "content_type": content_type
         }
 
     except Exception as e:
@@ -235,6 +237,7 @@ async def fetch_with_redirects(url: str, max_redirects: int = 5, headers: Dict[s
         -   "status_code"
         -   "status_message"
         -   "http_version"
+        -   "content_type"
     """
     redirects = 0
     current_cookies = cookies or {}

@@ -168,16 +168,25 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
         async def leaf_up(id: int | None, uri: str) -> (int | None):
             
             final_response = await fetch_with_redirects(uri, max_redirects=MAX_DIRECT_HTTP, headers=CUSTOM_HEADER)
+            content_type = final_response['content_type']
             http_body = final_response['body']
-            mime_type = get_mime_type_from_binary(http_body.encode() if isinstance(http_body, str) else http_body)
+            mime = get_mime_type_from_binary(http_body.encode() if isinstance(http_body, str) else http_body)
             
+            if isinstance(http_body, bytes):
+                mime = get_mime_type_from_binary(http_body)
+            else:
+                mime = get_mime_type_from_binary(http_body.encode())
+
+            if mime == "application/octet-stream" and content_type != mime:
+                mime = content_type
+                    
             with db_session.get_db() as db:
                 leaf = Leaves()
                 leaf.id = None
                 leaf.root_id = root.id
                 leaf.branch_id = id
                 leaf.val_classified = 'none-test'
-                leaf.val_mime_type = mime_type
+                leaf.val_mime_type = mime
                 
                 ids = update_leaves(db, leaves=[leaf])
                 if ids:
