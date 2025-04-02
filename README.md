@@ -1,6 +1,6 @@
 # CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI
 
-URI 싹싹 긁어 보이는 기능을 가지고 있습니다.
+URI 싹싹 긁어 모으는 기능을 가지고 있습니다.
 
 아직 개발하고 있고 개량을 거치면 더 좋아지겠네요
 
