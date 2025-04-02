@@ -1,9 +1,7 @@
 # CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI
 
 
-```json
-"User-Agent": "CCRE_URI_CRAWING" 
-```
+
 
 ### dependency:
 - sqlalchemy (data storage)
