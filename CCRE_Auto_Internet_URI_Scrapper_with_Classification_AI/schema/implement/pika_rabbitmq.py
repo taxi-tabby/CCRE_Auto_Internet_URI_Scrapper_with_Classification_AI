@@ -26,7 +26,14 @@ class PikaRabbitMQ:
                     host=host,
                     port=port,
                     virtual_host=vhost,
-                    credentials=pika.PlainCredentials(username, password)
+                    credentials=pika.PlainCredentials(username, password),
+                    socket_timeout=None,
+                    # connection_attempts=5,
+                    # retry_delay=5,
+                    blocked_connection_timeout=30,
+                    heartbeat=5,
+                    client_properties={'connection_name': 'CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI'},
+                    
                 )
             )
         except RuntimeError:
@@ -219,9 +226,6 @@ class PikaRabbitMQ:
         # - body: bytes
         def decorated_callback(ch: pika.channel.Channel, method: pika.spec.Basic.Deliver, properties: pika.spec.BasicProperties, body: bytes) -> None:
             
-            if self._closed_flag:
-                print("Consumer is closed. Stopping message consumption.")
-                ch.stop_consuming()
             
             callback(ch, method, properties, body)
             
@@ -233,10 +237,17 @@ class PikaRabbitMQ:
             # After delay, acknowledge the message
             ch.basic_ack(delivery_tag=method.delivery_tag)
             
+            if self._closed_flag:
+                print(f"Consumer is closed. Stopping message consumption. ch: {ch.channel_number}")
+                ch.stop_consuming()
+            
         
+        #--------------------------------------------------------
+        # Check if connection and channel are usable before consuming messages
+        #--------------------------------------------------------
         if self._chk_usable():
             # Disable auto_ack (set to False) to handle acknowledgment manually
-            self._channel.basic_consume(queue=queue_name, on_message_callback=decorated_callback, auto_ack=False)
+            self._channel.basic_consume(queue=queue_name, on_message_callback=decorated_callback, auto_ack=False, consumer_tag=queue_name, exclusive=False)
             self._channel.start_consuming()
         else:
             print("Connection or channel is not usable.")

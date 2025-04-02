@@ -9,6 +9,7 @@
 - sqlalchemy (data storage)
 - pika (rabbitmq)
 - aiohttp (async http request)
+- python-magic, python-magic-bin (binary mime check)
 
 ### dependency (for anti-virus content check):
 - yara, maltrail

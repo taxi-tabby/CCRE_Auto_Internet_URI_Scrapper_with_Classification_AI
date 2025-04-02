@@ -6,9 +6,11 @@ from sqlalchemy import text
 from urllib.parse import urlparse
 
 
-from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.rds import get_branch_id_if_exists, get_exists_branch, get_root_branch_count, table_init, get_roots_list, update_branches, update_roots
+from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.rds import get_branch_id_if_exists, get_exists_branch, get_root_branch_count, table_init, get_roots_list, update_branches, update_leaves, update_roots
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.crawing import fetch_with_redirects
+from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.mime import get_mime_type_from_binary
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.parser.json import parse_json_string
+from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.parser.robots import check_robot_permission
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.parser.uri import normalize_uri_path
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.parser.xml import  extract_links_from_xml
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.string import shorten_string
@@ -21,6 +23,25 @@ from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.thr
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.db.models import *
 from .import_path import add_module_path
 from datetime import datetime
+
+
+##-------------------------------------------------------------------------------
+##-------------------------------------------------------------------------------
+## constants
+##-------------------------------------------------------------------------------
+USER_AGENT_NAME = "CCRE_URI_CRAWLER/1.0/dev" # User-Agent 이름
+
+CUSTOM_HEADER = {
+    "User-Agent": USER_AGENT_NAME, 
+    "User-Agent-Source": "https://github.com/taxi-tabby/CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI"
+}
+
+MAX_DIRECT_HTTP = 3 # 최대 허용 리다이렉트 수
+
+##-------------------------------------------------------------------------------
+##-------------------------------------------------------------------------------
+##-------------------------------------------------------------------------------
+
 
 
 def thlog(root_key: str, *args):
@@ -44,9 +65,6 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
         'queue_name': f'{root.root_key}.queue',
         'route_key': f'{root.root_key}.direct_route'
     }
-    
-    
-
 
 
     mq_session.declare_exchange(config['exchange_name'], 'direct', durable=True, )
@@ -56,17 +74,32 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
     
     async def crawling_and_queuing(id: int | None, uri: str):
         try:
-            custom_headers = {
-                "User-Agent": "CCRE_URI_CRAWING", 
-                "User-Agent-Source": "https://github.com/taxi-tabby/CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI"
-                }
 
-            final_response = await fetch_with_redirects(uri, max_redirects=3, headers=custom_headers)
-            links = extract_links_from_xml(final_response['body'])
 
-            link_length = len(links)
-            # thlog(root.root_key, f"links count: {link_length} from id : {id}")
+            ## robots.txt 체크
+            if not check_robot_permission(uri, robot_name=USER_AGENT_NAME):
+                return
+
+            final_response = await fetch_with_redirects(uri, max_redirects=MAX_DIRECT_HTTP, headers=CUSTOM_HEADER)
             
+            status_code = final_response['status_code']
+            # http_body = final_response['body']
+            
+            # 에러가 400대 이상인 경우는 정상적이지 않음.. 그래서 넘기는거임
+            if status_code >= 400:
+                thlog(root.root_key, f"Failed with status code: {status_code}")
+                return
+            
+
+            
+
+            links = extract_links_from_xml(final_response['body'])
+            
+            
+            link_length = len(links)
+            
+            thlog(root.root_key, f"Links count: {link_length} from id : {id}")
+
             idx = 0
             for link in links:
                 idx += 1
@@ -111,13 +144,13 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
         thlog(root.root_key, f"Queue received: parent_id: {parent_id}, uri:{shorten_string(obj['url'], 40)}, relative:{obj['is_relative']}")
         
         
-        
+        # 브랜치 등록 체크
         def dup_chk(root_id: int, uri: str) -> (int | None):
             with db_session.get_db() as db:
                 return get_branch_id_if_exists(db, root_id, uri)
 
 
-
+        # 브렌치가 존재하면 브랜치 생성
         def branch_up(id: int | None, uri: str) -> (int | None):
             with db_session.get_db() as db:
                 branch = Branches()
@@ -129,6 +162,29 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
                 if ids:
                     return ids[0]
                 return None
+
+
+        # 브렌치가 존재하지 않으면 새로 생성
+        async def leaf_up(id: int | None, uri: str) -> (int | None):
+            
+            final_response = await fetch_with_redirects(uri, max_redirects=MAX_DIRECT_HTTP, headers=CUSTOM_HEADER)
+            http_body = final_response['body']
+            mime_type = get_mime_type_from_binary(http_body.encode() if isinstance(http_body, str) else http_body)
+            
+            with db_session.get_db() as db:
+                leaf = Leaves()
+                leaf.id = None
+                leaf.root_id = root.id
+                leaf.branch_id = id
+                leaf.val_classified = 'none-test'
+                leaf.val_mime_type = mime_type
+                
+                ids = update_leaves(db, leaves=[leaf])
+                if ids:
+                    return ids[0]
+                return None
+            
+            
 
         try:
             if obj['is_relative']:
@@ -147,12 +203,14 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
                     # print(f"branch id: {parent_id} / {id}")
                     if not id == None:
                         asyncio.run(crawling_and_queuing(id, assembled_uri_with_path))
+                        asyncio.run(leaf_up(id, assembled_uri_with_path))
                     
                 if d2 == None:
                     id = branch_up(parent_id, assembled_uri_no_path)
                     # print(f"branch id: {parent_id} / {id}")
                     if not id == None:
                         asyncio.run(crawling_and_queuing(id, assembled_uri_no_path))
+                        asyncio.run(leaf_up(id, assembled_uri_no_path))
                 
             else:
                 # 절대경로
@@ -163,6 +221,7 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
                     # print(f"branch id: {parent_id} / {id}")
                     if not id == None:
                         asyncio.run(crawling_and_queuing(id, assembled_uri))
+                        asyncio.run(leaf_up(id, assembled_uri))
                 
 
 
@@ -174,7 +233,8 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
     thlog(root.root_key, f'start consuming')
     
     # 메세지 큐 소비
-    mq_session.b_consume(config['queue_name'], callback, delay_sec=1)
+    mq_session.set_qos(1)
+    mq_session.b_consume(config['queue_name'], callback, delay_sec=0.1)
     
     # 쓰레드 종료 메세지
     thlog(root.root_key, f"worker process complete")
@@ -254,9 +314,13 @@ def initialize(
     
     try:
         while True:
-            time.sleep(1)  
+            time.sleep(5)  
     except KeyboardInterrupt:
         print("Exiting the program.")
+        for mq_conn in all_mq_session:
+            mq_conn.stop_consuming()
+    except Exception as e:
+        print(f"An error occurred: {e}")
         for mq_conn in all_mq_session:
             mq_conn.stop_consuming()
         

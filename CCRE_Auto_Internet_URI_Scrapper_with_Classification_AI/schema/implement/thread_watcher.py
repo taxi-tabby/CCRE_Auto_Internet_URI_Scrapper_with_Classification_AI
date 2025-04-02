@@ -13,10 +13,14 @@ class WatcherThread(threading.Thread):
     def run(self):
         """주기적으로 쓰레드들을 감시하며 상태를 체크하는 메서드"""
         while not self._stop_event.is_set():  # stop 이벤트가 설정되면 감시 종료
+            
             time.sleep(self.check_interval)
+            
             for worker in self.worker_threads:
                 if not worker.is_alive():  # 워커가 살아 있지 않다면
+                    
                     print(f"Thread {worker.thread_id} is not alive.")
+                    
                     if self.is_active:  # 감시자가 활성 상태일 때만 재시작
                         self.restart_worker_thread(worker)
 

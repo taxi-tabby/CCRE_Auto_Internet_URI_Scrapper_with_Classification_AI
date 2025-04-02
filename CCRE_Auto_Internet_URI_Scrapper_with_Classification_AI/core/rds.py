@@ -189,3 +189,80 @@ def update_branches(db: Session, branches: list[Branches]) -> list[int]:
             db.rollback()
     
     return created_ids
+
+
+
+
+
+def update_leaves(db: Session, leaves: list[Leaves]) -> list[int]:
+    """
+    leaves 리스트를 순회하며 val_classified가 없는 경우 새로 등록하고,
+    이미 존재하는 경우 변경사항이 있으면 업데이트합니다.
+    생성된 leaf의 id를 반환합니다.
+    """
+    created_ids = []
+    try:
+        with db.begin():  # 트랜잭션 시작
+            for leaf in leaves:
+                # 기존 val_classified가 존재하는지 확인
+                existing_leaf = db.query(Leaves).filter_by(id=leaf.id).first()
+                
+                if existing_leaf:
+                    # 변경사항이 있는 경우에만 업데이트
+                    if existing_leaf.val_html_meta_title != leaf.val_html_meta_title:
+                        existing_leaf.val_html_meta_title = leaf.val_html_meta_title
+                        
+                    if existing_leaf.val_html_meta_og_title != leaf.val_html_meta_og_title:
+                        existing_leaf.val_html_meta_og_title = leaf.val_html_meta_og_title
+                    
+                    if existing_leaf.val_html_meta_robots != leaf.val_html_meta_robots:
+                        existing_leaf.val_html_meta_robots = leaf.val_html_meta_robots
+                        
+                    if existing_leaf.val_html_meta_description != leaf.val_html_meta_description:
+                        existing_leaf.val_html_meta_description = leaf.val_html_meta_description
+                        
+                    if existing_leaf.val_html_meta_keywords != leaf.val_html_meta_keywords:
+                        existing_leaf.val_html_meta_keywords = leaf.val_html_meta_keywords
+                        
+                    if existing_leaf.val_html_meta_author != leaf.val_html_meta_author:
+                        existing_leaf.val_html_meta_author = leaf.val_html_meta_author
+                        
+                    if existing_leaf.val_mime_type != leaf.val_mime_type:
+                        existing_leaf.val_mime_type = leaf.val_mime_type
+                    
+                    if existing_leaf.val_main_language != leaf.val_main_language:
+                        existing_leaf.val_main_language = leaf.val_main_language
+                        
+                        
+                else:
+                    # 새로운 leaf 추가
+                    new_leaf = Leaves(
+                        root_id=leaf.root_id,
+                        branch_id=leaf.branch_id,
+                        val_classified=leaf.val_classified,
+                        val_html_meta_title=leaf.val_html_meta_title,
+                        val_html_meta_og_title=leaf.val_html_meta_og_title,
+                        val_html_meta_robots=leaf.val_html_meta_robots,
+                        val_html_meta_description=leaf.val_html_meta_description,
+                        val_html_meta_keywords=leaf.val_html_meta_keywords,
+                        val_html_meta_author=leaf.val_html_meta_author,
+                        val_mime_type=leaf.val_mime_type,
+                        val_main_language=leaf.val_main_language
+                    )
+                    db.add(new_leaf)
+                    db.flush()  # 새로 추가된 객체의 id를 가져오기 위해 flush 호출
+                    created_ids.append(new_leaf.id)
+                    
+    except SQLAlchemyError as e:
+        print(f"SQLAlchemyError occurred: {str(e)}")
+    except Exception as e:
+        print(f"Error occurred: {str(e)}")
+        
+    finally:
+        try:
+            db.commit()
+        except Exception as e:
+            print(f"Commit failed: {str(e)}")
+            db.rollback()
+    
+    return created_ids

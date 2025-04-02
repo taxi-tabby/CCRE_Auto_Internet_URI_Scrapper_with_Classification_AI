@@ -13,7 +13,7 @@ from sqlalchemy.orm import relationship
 from .base import Base
 
 class Leaves(Base):
-    """브렌치 테이블
+    """리프 테이블
     
     Returns:
         _type_: sqlalchemy model
@@ -32,9 +32,22 @@ class Leaves(Base):
     # 식별된 데이터 문자열
     val_classified: Mapped[str] = mapped_column(type_=Text, nullable=False)
     
+    val_html_meta_title: Mapped[Optional[str]] = mapped_column(type_=Text, nullable=True) #html 의 title 태그의 내용
+    val_html_meta_og_title: Mapped[Optional[str]] = mapped_column(type_=Text, nullable=True) #html 의 meta 태그 중 og:title 의 내용
+    val_html_meta_robots: Mapped[Optional[str]] = mapped_column(type_=Text, nullable=True) #html 의 meta 태그 중 robots 의 내용
+    val_html_meta_description: Mapped[Optional[str]] = mapped_column(type_=Text, nullable=True) #html 의 meta 태그 중 description 의 내용
+    val_html_meta_keywords: Mapped[Optional[str]] = mapped_column(type_=Text, nullable=True) #html 의 meta 태그 중 keywords 의 내용
+    val_html_meta_author: Mapped[Optional[str]] = mapped_column(type_=Text, nullable=True) #html 의 meta 태그 중 author 의 내용
+    
+    # MIME 타입
+    val_mime_type: Mapped[Optional[str]] = mapped_column(type_=Text, nullable=True) 
+    
+    # 메인 언어
+    val_main_language: Mapped[Optional[str]] = mapped_column(type_=Text, nullable=True) 
     
     # 추가된 일자
     created_at: Mapped[datetime] = mapped_column(type_=DateTime, server_default=text("CURRENT_TIMESTAMP"), nullable=False)  
+    
     
     __table_args__ = (
         Index('default_leaves_index', 'root_id', 'branch_id', 'id'),
