@@ -1,5 +1,21 @@
 # CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI
 
+URI 싹싹 긁어 보이는 기능을 가지고 있습니다.
+
+아직 개발하고 있고 개량을 거치면 더 좋아지겠네요
+
+덕덕고, 구글, 야후, 네이버 같은 검색엔진이 순회하면서 사이트 정보를 얻듯 다양한 위치에서 URI를 얻고 분별, 평가하여 RDS DB에 실시간으로 저장합니다.
+
+풀어선 뭐 검색엔진 봇이죠 봇.
+
+코드상에서 설정하여 이미지는 이미지별로, HTML 문서나 폰트파일 등에 대해 개발자가 지정하여 모델을 적용하고 자동으로 평가하게 할 수 있도록 하는것이 목표입니다
+
+RABBITMQ + RDS DB로 구성된 만큼 관리하는데 어려움이 있으며 추후에는 GUI로 만들어지면 좋겠네요.
+
+root라는 단위는 시작점을 기리키는 uri이고 해당 기준으로 설정을 가지고 있으며 root의 갯수만큼 쓰레드를 생성하고 실행됩니다.
+
+영어로 쓰는건 나중에 해야지
+
 
 
 
@@ -8,11 +24,12 @@
 - pika (rabbitmq)
 - aiohttp (async http request)
 - python-magic, python-magic-bin (binary mime check)
+- yara, maltrail (ANTI VIRUS 1) (아직 안썼음)
+- pyclamd (ANTI VIRUS 2) (아직 안썼음)
 
-### dependency (for anti-virus content check):
-- yara, maltrail
-- pyclamd
--  
+### tools
+- rabbitMQ
+- RDS DB
 
 ### features
 - crawling
