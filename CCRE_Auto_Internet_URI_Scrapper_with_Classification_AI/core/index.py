@@ -6,11 +6,11 @@ from sqlalchemy import text
 from urllib.parse import urlparse
 
 
-from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.rds import get_branch_id_if_exists, get_exists_branch, get_root_branch_count, table_init, get_roots_list, update_branches, update_leaves, update_roots
+from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.rds import get_branch_id_if_exists, get_exists_branch, get_robots_by_domain, get_root_branch_count, table_init, get_roots_list, update_branches, update_leaves, update_robot, update_roots
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.crawing import fetch_with_redirects
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.mime import get_mime_type_from_binary
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.parser.json import parse_json_string
-from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.parser.robots import check_robot_permission
+from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.parser.robots import check_robot_permission_from_rules, fetch_robots_txt
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.parser.uri import normalize_uri_path
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.parser.xml import  extract_links_from_xml
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.string import shorten_string
@@ -22,7 +22,7 @@ from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.sql
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.thread_manager import ThreadManager
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.db.models import *
 from .import_path import add_module_path
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 ##-------------------------------------------------------------------------------
@@ -36,7 +36,7 @@ CUSTOM_HEADER = {
     "User-Agent-Source": "https://github.com/taxi-tabby/CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI"
 }
 
-MAX_DIRECT_HTTP = 3 # 최대 허용 리다이렉트 수
+MAX_DIRECT_HTTP = 2 # 최대 허용 리다이렉트 수
 
 ##-------------------------------------------------------------------------------
 ##-------------------------------------------------------------------------------
@@ -74,11 +74,36 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
     
     async def crawling_and_queuing(id: int | None, uri: str):
         try:
-
+            uri_data = urlparse(uri)
+            base_url = f"{uri_data.scheme}://{uri_data.hostname}"
 
             ## robots.txt 체크
-            if not check_robot_permission(uri, robot_name=USER_AGENT_NAME):
+            robot_ok = False
+            with db_session.get_db() as db:
+                robot = get_robots_by_domain(db, base_url)
+                
+                if robot != None:
+                    last_time = robot.updated_at if robot.updated_at else robot.created_at
+                    robot_ruleset = robot.ruleset_text
+                    
+                    if datetime.now(datetime.timezone.utc) - last_time > timedelta(minutes=5):
+                        robot_ruleset = await fetch_robots_txt(uri)
+                        time.sleep(1)
+                        update_robot(db, base_url, robot_ruleset)
+                        
+                    robot_ok = check_robot_permission_from_rules(USER_AGENT_NAME, robot_ruleset, uri)
+                    
+                else:
+                    robot_ruleset = await fetch_robots_txt(uri)
+                    time.sleep(1)
+                    update_robot(db, base_url, robot_ruleset)
+                    robot_ok = check_robot_permission_from_rules(USER_AGENT_NAME, robot_ruleset, uri)
+
+            
+            if not robot_ok:
+                thlog(root.root_key, f"robots.txt check failed: {base_url}")
                 return
+
 
             final_response = await fetch_with_redirects(uri, max_redirects=MAX_DIRECT_HTTP, headers=CUSTOM_HEADER)
             
@@ -243,7 +268,7 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
     
     # 메세지 큐 소비
     mq_session.set_qos(1)
-    mq_session.b_consume(config['queue_name'], callback, delay_sec=0.1)
+    mq_session.b_consume(config['queue_name'], callback, delay_sec=1.46)
     
     # 쓰레드 종료 메세지
     thlog(root.root_key, f"worker process complete")

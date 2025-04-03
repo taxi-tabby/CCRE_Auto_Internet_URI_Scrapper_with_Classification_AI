@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+from typing import Optional
 from sqlalchemy import Engine, text
 from sqlalchemy.orm import Session
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.stringify.json import stringify_to_json
@@ -83,6 +85,8 @@ def table_init(engine: Engine, db: Session, db_type: DatabaseType):
     if not _chk_rds_table_exists(db, db_type, "leaves"):
         Leaves.metadata.create_all(engine) 
         
+    if not _chk_rds_table_exists(db, db_type, "robots"):
+        Robots.metadata.create_all(engine)    
         
         
 def update_roots(db: Session, roots: list[Scrapper_Root]):
@@ -237,6 +241,7 @@ def update_leaves(db: Session, leaves: list[Leaves]) -> list[int]:
                 else:
                     # 새로운 leaf 추가
                     new_leaf = Leaves(
+                        id=None,
                         root_id=leaf.root_id,
                         branch_id=leaf.branch_id,
                         val_classified=leaf.val_classified,
@@ -266,3 +271,57 @@ def update_leaves(db: Session, leaves: list[Leaves]) -> list[int]:
             db.rollback()
     
     return created_ids
+
+
+def update_robot(db: Session, base_domain: str, ruleset_text: str) -> int:
+    """
+    robots 테이블에 새로운 레코드를 삽입하거나, 
+    base_domain이 중복되는 경우 ruleset_text를 업데이트합니다.
+    """
+    val_id = -1
+    try:
+        with db.begin():  # 트랜잭션 시작
+            existing_robot = db.query(Robots).filter_by(base_domain=base_domain).first()
+            
+            if existing_robot:
+                # 기존 레코드 업데이트
+                existing_robot.ruleset_text = ruleset_text
+                existing_robot.updated_at = datetime.now(datetime.timezone.utc)
+                val_id = existing_robot.id
+            else:
+                # 새로운 레코드 삽입
+                new_robot = Robots(id=None, base_domain=base_domain, ruleset_text=ruleset_text)
+                db.add(new_robot)
+                db.flush()  # 새로 추가된 객체의 id를 가져오기 위해 flush 호출
+                val_id = new_robot.id
+                
+    except SQLAlchemyError as e:
+        print(f"SQLAlchemyError occurred: {str(e)}")
+        db.rollback()  # 오류 발생 시 롤백
+    except Exception as e:
+        print(f"Error occurred: {str(e)}")
+        db.rollback()  # 오류 발생 시 롤백
+    
+    finally:
+        try:
+            db.commit()
+        except Exception as e:
+            print(f"Commit failed: {str(e)}")
+            db.rollback()
+            
+
+    return val_id
+
+
+def get_robots_by_domain(db: Session, base_domain: str) -> Optional[Robots]:
+    """
+    base_domain을 기준으로 robots 테이블에서 레코드를 조회합니다.
+    """
+    try:
+        return db.query(Robots).filter_by(base_domain=base_domain).first()
+    except SQLAlchemyError as e:
+        print(f"SQLAlchemyError occurred: {str(e)}")
+        return None
+    except Exception as e:
+        print(f"Error occurred: {str(e)}")
+        return None

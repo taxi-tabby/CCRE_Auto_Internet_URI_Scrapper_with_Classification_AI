@@ -3,6 +3,7 @@ from sqlalchemy.orm import relationship
 from .root import Roots
 from .branches import Branches
 from .leaves import Leaves
+from .robots import Robots
 
 
 
@@ -16,4 +17,4 @@ Leaves.branch = relationship("Branches", back_populates="leaves")
 
 
 # 공개할 이름 정의
-__all__ = ["Roots", "Branches", "Leaves"]
+__all__ = ["Roots", "Branches", "Leaves", "Robots"]
