@@ -2,6 +2,8 @@ import aiohttp
 import re
 from urllib.parse import urlparse
 
+import requests
+
 
 async def fetch_robots_txt(path: str) -> str:
     """
@@ -24,7 +26,29 @@ async def fetch_robots_txt(path: str) -> str:
                 return await response.text()
     except Exception:
         return ""  # 오류가 발생하면 빈 문자열 반환
-    
+
+# def fetch_robots_txt(path: str) -> str:
+#     """
+#     주어진 URL에서 robots.txt 내용을 가져옵니다. (동기 버전)
+
+#     Args:
+#         path (str): 로봇이 접근하려는 경로를 포함한 URL (예: "https://example.com/somepath").
+
+#     Returns:
+#         str: robots.txt 내용. 가져올 수 없으면 빈 문자열 반환.
+#     """
+#     base_url = f"{urlparse(path).scheme}://{urlparse(path).hostname}"
+#     robots_url = f"{base_url}/robots.txt"
+
+#     try:
+#         response = requests.get(robots_url)
+
+#         if response.status_code != 200:
+#             return ""  # robots.txt를 가져올 수 없으면 빈 문자열 반환
+
+#         return response.text
+#     except Exception:
+#         return ""  # 오류가 발생하면 빈 문자열 반환
     
     
 def check_robot_permission_from_rules(robot_name: str, ruleset: str, path: str) -> bool:

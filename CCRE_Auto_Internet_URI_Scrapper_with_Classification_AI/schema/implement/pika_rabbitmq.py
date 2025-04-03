@@ -226,7 +226,12 @@ class PikaRabbitMQ:
         # - body: bytes
         def decorated_callback(ch: pika.channel.Channel, method: pika.spec.Basic.Deliver, properties: pika.spec.BasicProperties, body: bytes) -> None:
             
-            
+            def close():
+                if self._closed_flag:
+                    print(f"Consumer is closed. Stopping message consumption. ch: {ch.channel_number}")
+                    ch.stop_consuming()
+                    
+                   
             callback(ch, method, properties, body)
             
             # Optional delay after callback execution
@@ -236,10 +241,8 @@ class PikaRabbitMQ:
             
             # After delay, acknowledge the message
             ch.basic_ack(delivery_tag=method.delivery_tag)
-            
-            if self._closed_flag:
-                print(f"Consumer is closed. Stopping message consumption. ch: {ch.channel_number}")
-                ch.stop_consuming()
+            close()
+
             
         
         #--------------------------------------------------------
@@ -247,11 +250,22 @@ class PikaRabbitMQ:
         #--------------------------------------------------------
         if self._chk_usable():
             # Disable auto_ack (set to False) to handle acknowledgment manually
-            self._channel.basic_consume(queue=queue_name, on_message_callback=decorated_callback, auto_ack=False, consumer_tag=queue_name, exclusive=False)
+            self._channel.basic_consume(queue=queue_name, on_message_callback=decorated_callback, auto_ack=False, consumer_tag=queue_name, exclusive=False,)
             self._channel.start_consuming()
         else:
             print("Connection or channel is not usable.")
         
+        
+    
+    def force_channel_consuming_stop(self):
+        """
+        ### Forcefully stops consuming messages from the channel.
+        ### 채널에서 메세지 소비 강제 중지
+        """
+        if self._chk_channel():
+            self._channel.stop_consuming()
+        else:
+            print("connection or channel is not usable")
         
     def stop_consuming(self):
         """

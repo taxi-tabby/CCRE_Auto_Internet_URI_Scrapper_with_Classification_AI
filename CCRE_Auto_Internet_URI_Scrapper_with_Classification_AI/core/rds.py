@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 from sqlalchemy import Engine, text
 from sqlalchemy.orm import Session
@@ -60,12 +60,12 @@ def _chk_rds_table_exists(db: Session, db_type: DatabaseType, table_name: str) -
             
     except SQLAlchemyError as e:
         # SQLAlchemyError를 잡아서 구체적인 오류 메시지를 출력
-        print(f"SQLAlchemyError occurred: {str(e)}")
+        print(f"SQLAlchemyError occurred: {e}")
         return False
     
     except Exception as e:
         # 예외 메시지 출력 시, 실제 예외 객체의 내용을 출력합니다.
-        print(f"Error occurred: {str(e)}")
+        print(f"Error occurred: {e}")
         return False
     
     
@@ -145,6 +145,8 @@ def get_exists_branch(db: Session, root_id: int, branch_uri: str) -> bool:
     루트에 해당하는 브랜치가 존재하는지 확인
     """
     return db.query(Branches).filter_by(root_id=root_id, branch_uri=branch_uri).first() is not None
+
+
 
 def get_branch_id_if_exists(db: Session, root_id: int, branch_uri: str) -> int | None:
     """
@@ -241,7 +243,6 @@ def update_leaves(db: Session, leaves: list[Leaves]) -> list[int]:
                 else:
                     # 새로운 leaf 추가
                     new_leaf = Leaves(
-                        id=None,
                         root_id=leaf.root_id,
                         branch_id=leaf.branch_id,
                         val_classified=leaf.val_classified,
@@ -279,49 +280,49 @@ def update_robot(db: Session, base_domain: str, ruleset_text: str) -> int:
     base_domain이 중복되는 경우 ruleset_text를 업데이트합니다.
     """
     val_id = -1
+    
+    
+    
     try:
+        # Only one transaction in the entire function call
         with db.begin():  # 트랜잭션 시작
+            
             existing_robot = db.query(Robots).filter_by(base_domain=base_domain).first()
             
             if existing_robot:
-                # 기존 레코드 업데이트
                 existing_robot.ruleset_text = ruleset_text
-                existing_robot.updated_at = datetime.now(datetime.timezone.utc)
+                existing_robot.updated_at = datetime.now(timezone.utc)
                 val_id = existing_robot.id
             else:
-                # 새로운 레코드 삽입
                 new_robot = Robots(id=None, base_domain=base_domain, ruleset_text=ruleset_text)
                 db.add(new_robot)
-                db.flush()  # 새로 추가된 객체의 id를 가져오기 위해 flush 호출
+                db.flush()  # For getting the id after insertion
                 val_id = new_robot.id
                 
     except SQLAlchemyError as e:
         print(f"SQLAlchemyError occurred: {str(e)}")
-        db.rollback()  # 오류 발생 시 롤백
     except Exception as e:
         print(f"Error occurred: {str(e)}")
-        db.rollback()  # 오류 발생 시 롤백
-    
-    finally:
-        try:
-            db.commit()
-        except Exception as e:
-            print(f"Commit failed: {str(e)}")
-            db.rollback()
-            
 
     return val_id
 
-
-def get_robots_by_domain(db: Session, base_domain: str) -> Optional[Robots]:
+def get_robots_by_domain(db: Session, base_domain: str):
     """
     base_domain을 기준으로 robots 테이블에서 레코드를 조회합니다.
     """
     try:
-        return db.query(Robots).filter_by(base_domain=base_domain).first()
+        # Simple query without begin block as db handles commits/rollbacks implicitly
+        r = db.query(Robots).filter_by(base_domain=base_domain).first()
+        return r
+
     except SQLAlchemyError as e:
-        print(f"SQLAlchemyError occurred: {str(e)}")
+        print(f"SQLAlchemyError occurred: {e}")
+        db.rollback()  # Rollback the transaction in case of an error
         return None
     except Exception as e:
-        print(f"Error occurred: {str(e)}")
+        print(f"Error occurred: {e}")
+        db.rollback()  # Rollback the transaction in case of an error
         return None
+    finally:
+        # Close session after handling the transaction and exceptions
+        db.close()
