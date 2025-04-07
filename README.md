@@ -56,6 +56,23 @@ https://huggingface.co/
 
 ### devlog
 
+
+#### 2025.04.07 (2)
+
+할 것.
+1. 종료 시 쓰레드 타이밍 재정의
+2. 커스텀 옵션 추가 및 적용
+3. 통신 실패한 경우 예외처리 보강. 
+
+
+> 강종 처리에 대한 예외 메모
+```console
+1.Stream connection lost: AssertionError(('_AsyncTransportBase._produce() tx buffer size underflow', -36, 1))
+2.Stream connection lost: InvalidFrameError: Invalid frame received: 'Invalid FRAME_END marker
+3.Scheduled callback error: ('_AsyncTransportBase._initate_abort() expected _STATE_ABORTED_BY_USER', 2)
+4. ('_AsyncTransportBase._initate_abort() expected _STATE_ABORTED_BY_USER', 2)
+```
+
 #### 2025.04.07 (1)
 
 이제 소생 잘 댐. 소켓 오류에 대해 문제는 있는데. 이제 죽어도 잘 살아남.

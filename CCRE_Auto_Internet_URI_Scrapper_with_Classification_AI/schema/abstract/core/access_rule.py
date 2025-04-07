@@ -5,6 +5,22 @@ class CCRE_AI_Scrapper_Access_Rule(ABC):
 
 
 
+
+    @property
+    @abstractmethod
+    def consume_delay_seconds():
+        """
+        소비 지연 시간을 초 단위로 설정합니다.
+        """
+        pass
+
+    @consume_delay_seconds.setter
+    @abstractmethod
+    def consume_delay_seconds(self, value: int):
+        pass
+
+
+
     @property
     @abstractmethod
     def robots_txt_expiration_time():
@@ -16,20 +32,6 @@ class CCRE_AI_Scrapper_Access_Rule(ABC):
     @robots_txt_expiration_time.setter
     @abstractmethod
     def robots_txt_expiration_time(self, value: timedelta):
-        pass
-
-
-    @property
-    @abstractmethod
-    def bot_name():
-        """
-        bot name을 설정합니다
-        """
-        pass
-    
-    @bot_name.setter
-    @abstractmethod
-    def bot_name(self, value: str):
         pass
 
 
@@ -158,3 +160,32 @@ class CCRE_AI_Scrapper_Access_Rule(ABC):
     @abstractmethod
     def refresh_duplicate_uri_count(self, value: int):
         pass
+    
+    
+    @abstractmethod
+    def to_json(self) -> str:
+        """
+        객체의 속성을 JSON 문자열로 변환합니다.
+        """
+        pass
+    
+    @abstractmethod
+    def put_json(self, data: dict | None) -> None:
+        """
+        객체 json 데이터를 해당 오브젝트에 입력합니다.
+        :param data: 객체에 입력할 JSON 데이터의 딕셔너리 형태
+        """
+        pass
+    
+    
+    
+    def __repr__(self) -> str:
+        """
+        객체의 속성을 문자열로 표현합니다.
+        """
+        attributes = ", ".join(
+            f"{attr}={getattr(self, attr, None)!r}" 
+            for attr in dir(self) 
+            if not attr.startswith("_") and not callable(getattr(self, attr, None))
+        )
+        return f"<{self.__class__.__name__}({attributes})>"

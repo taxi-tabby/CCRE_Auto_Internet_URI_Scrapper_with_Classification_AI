@@ -6,7 +6,7 @@ import pika
 import pytz
 from sqlalchemy import text
 from urllib.parse import urlparse
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.predef import CUSTOM_HEADER, GLOBAL_TIMEZONE, MAX_DIRECT_HTTP, USER_AGENT_NAME
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.rds import get_branch_id_if_exists, get_robots_by_domain, get_root_branch_count, table_init, get_roots_list, update_branches, update_leaves, update_robot, update_roots
@@ -24,6 +24,7 @@ from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.pik
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.scrapper_root import Scrapper_Root
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.sqlalchemy import SQLAlchemyConnection
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.thread_manager import ThreadManager
+from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.scrapper_root_access_rule import Scrapper_Root_Access_Rule
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.db.models import *
 from .import_path import add_module_path
 
@@ -100,7 +101,11 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
         'route_key': f'{root.root_key}.direct_route'
     }
 
-        
+    
+    # rules object 생성
+    rules: Scrapper_Root_Access_Rule = Scrapper_Root_Access_Rule()
+    rules.put_json(parse_json_string(root.rules))
+
 
     mq_session.declare_exchange(config['exchange_name'], 'direct', durable=True, )
     mq_session.declare_queue(config['queue_name'], durable=True)
@@ -145,10 +150,11 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
                     # 시간 차이 계산
                     time_difference = nowtime_utc - last_time
                     
+                    
 
                     robot_ruleset = robot.ruleset_text
                     
-                    if isinstance(time_difference, timedelta) and time_difference > timedelta(minutes=5):
+                    if isinstance(time_difference, timedelta) and time_difference > rules.robots_txt_expiration_time:
                         # print('로봇체크 캐시 업데이트 시작')
                         robot_ruleset = await fetch_robots_txt(uri)
                         update_robot(db, base_url, robot_ruleset, GLOBAL_TIMEZONE)
@@ -362,7 +368,7 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
     thlog(root.root_key, f'start consuming')
     # 메세지 큐 소비
     # mq_session.set_qos(1)
-    mq_session.b_consume(config['queue_name'], callback, delay_sec=0.46)
+    mq_session.b_consume(config['queue_name'], callback, delay_sec=rules.consume_delay_seconds)
     # 쓰레드 종료 메세지
     thlog(root.root_key, f"worker process complete")
     

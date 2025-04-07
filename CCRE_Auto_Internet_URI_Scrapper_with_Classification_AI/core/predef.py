@@ -5,7 +5,7 @@
 
 GLOBAL_TIMEZONE = 'UTC' # 전역 타임존 설정
 
-USER_AGENT_NAME = "CCRE_URI_CRAWLER/1.0/dev" # User-Agent 이름
+USER_AGENT_NAME = "CCRE_URI_CRAWLER" # User-Agent 이름
 
 CUSTOM_HEADER = {
     "User-Agent": USER_AGENT_NAME, 
