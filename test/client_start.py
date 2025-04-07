@@ -48,7 +48,7 @@ option = Scrapper_Root_Access_Rule(
     refresh_duplicate_uri=True, 
 
     # Threshold count of duplicate URIs before refreshing
-    refresh_duplicate_uri_count=10 
+    refresh_duplicate_uri_count=10,
 
 )
 

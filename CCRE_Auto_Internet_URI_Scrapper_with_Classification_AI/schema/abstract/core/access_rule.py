@@ -1,10 +1,22 @@
 from abc import ABC, abstractmethod
+from datetime import timedelta
 
 class CCRE_AI_Scrapper_Access_Rule(ABC):
 
 
 
+    @property
+    @abstractmethod
+    def robots_txt_expiration_time():
+        """
+        robots.txt 규칙의 만료 시간을 설정합니다 (timedelta 타입).
+        """
+        pass
 
+    @robots_txt_expiration_time.setter
+    @abstractmethod
+    def robots_txt_expiration_time(self, value: timedelta):
+        pass
 
 
     @property

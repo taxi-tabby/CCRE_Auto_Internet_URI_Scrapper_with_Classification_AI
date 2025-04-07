@@ -22,10 +22,7 @@ class Scrapper_Root_Access_Rule(CCRE_AI_Scrapper_Access_Rule):
     def skip_duplication_uri(self, value: bool):
         self._skip_duplication_uri = value
         
-        
-        
-        
-    
+
     @property
     def refresh_duplicate_uri(self) -> bool:
         return self._refresh_duplicate_uri
