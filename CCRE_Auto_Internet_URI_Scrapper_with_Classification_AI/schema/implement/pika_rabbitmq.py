@@ -12,15 +12,23 @@ class PikaRabbitMQ:
     - 단순 조작용으로 추상체는 없스
     """
     
+
+    
     def __init__(self):
         self._connection = None
         self._channel = None
         self._closed_flag = False
-        pass
-    
+        self._connection_params = None
+
     def connect(self, host, port, username, password, vhost) -> bool:
-        
         try:
+            self._connection_params = {
+                "host": host,
+                "port": port,
+                "username": username,
+                "password": password,
+                "vhost": vhost,
+            }
             self._connection = pika.BlockingConnection(
                 pika.ConnectionParameters(
                     host=host,
@@ -28,21 +36,47 @@ class PikaRabbitMQ:
                     virtual_host=vhost,
                     credentials=pika.PlainCredentials(username, password),
                     socket_timeout=None,
-                    # connection_attempts=5,
-                    # retry_delay=5,
                     blocked_connection_timeout=30,
                     heartbeat=5,
                     client_properties={'connection_name': 'CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI'},
-                    
                 )
             )
-        except RuntimeError:
+        except pika.exceptions.AMQPConnectionError as e:
             self._connection = None
-        
+        except Exception as e:
+            self._connection = None
+
         if self._chk_conn():
             return True
-        
+
         return False
+
+    def reconnect(self) -> bool:
+        """
+        ### Reconnects to RabbitMQ by cleaning up all resources and retrying.
+        ### 모든 리소스를 정리하고 재연결 시도
+        """
+        if self._connection_params is None:
+            return False
+
+        # Clean up existing connection and channel
+        if self._chk_usable() and self._channel.is_open:
+            self._channel.close()
+        if self._chk_conn() and self._connection.is_open:
+            self._connection.close()
+
+        self._channel = None
+        self._connection = None
+        self._closed_flag = False
+
+        # Retry connection
+        return self.connect(
+            self._connection_params["host"],
+            self._connection_params["port"],
+            self._connection_params["username"],
+            self._connection_params["password"],
+            self._connection_params["vhost"],
+        )
     
     
     
@@ -51,7 +85,7 @@ class PikaRabbitMQ:
         ### Check channel
         ### 채널만 확인
         """
-        if self._channel is None:
+        if self._channel is None or not self._channel.is_open:
             return False
         return True
     
@@ -60,7 +94,7 @@ class PikaRabbitMQ:
         ### Check connection
         ### 연결 오브제만 확인
         """
-        if self._connection is None:
+        if self._connection is None or not self._connection.is_open:
             return False
         return True
         
@@ -69,12 +103,11 @@ class PikaRabbitMQ:
         ### Check connection and channel
         ### 연결과 채널을 확인
         """
-        if self._connection is None or self._channel is None:
+        if self._connection is None or not self._connection.is_open or self._channel is None or not self._channel.is_open:
             return False
         return True
 
-            
-    
+
     def declare_channel(self) -> bool:
         """
         ### Declares a channel for the connection if not already created.

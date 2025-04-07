@@ -58,8 +58,8 @@ client_start(
     db_rds_connection=rds_connection,
     db_mq_connection=rabbit_mq,
     roots=[
-        # Scrapper_Root('test_example1_kr', access_rule=option, root_uri='https://naver.com'),
+        Scrapper_Root('test_example1_kr', access_rule=option, root_uri='https://naver.com'),
         Scrapper_Root('test_example2_jp', access_rule=option, root_uri='https://www.yahoo.co.jp'),
-        # Scrapper_Root('test_example3_zh', access_rule=option, root_uri='https://baidu.com'),
+        Scrapper_Root('test_example3_zh', access_rule=option, root_uri='https://baidu.com'),
     ]
 )

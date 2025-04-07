@@ -13,7 +13,7 @@ async def fetch_robots_txt(path: str) -> str:
         path (str): 로봇이 접근하려는 경로를 포함한 URL (예: "https://example.com/somepath").
 
     Returns:
-        str: robots.txt 내용. 가져올 수 없으면 빈 문자열 반환.
+        str: robots.txt 내용. 가져올 수 없으면 기본 규칙 반환.
     """
     base_url = f"{urlparse(path).scheme}://{urlparse(path).hostname}"
     robots_url = f"{base_url}/robots.txt"
@@ -22,10 +22,12 @@ async def fetch_robots_txt(path: str) -> str:
         async with aiohttp.ClientSession() as session:
             async with session.get(robots_url) as response:
                 if response.status != 200:
-                    return ""  # robots.txt를 가져올 수 없으면 빈 문자열 반환
+                    # 404 등의 경우 기본 규칙 반환
+                    return "User-agent: *\nAllow: /"
                 return await response.text()
     except Exception:
-        return ""  # 오류가 발생하면 빈 문자열 반환
+        # 오류가 발생하면 기본 규칙 반환
+        return "User-agent: *\nAllow: /"
 
 # def fetch_robots_txt(path: str) -> str:
 #     """

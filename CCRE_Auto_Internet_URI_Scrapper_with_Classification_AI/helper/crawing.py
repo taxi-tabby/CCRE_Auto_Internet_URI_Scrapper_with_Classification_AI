@@ -1,5 +1,6 @@
 import socket
 import ssl
+import time
 from urllib.parse import urlparse, urljoin
 import random
 from typing import Dict, Union
@@ -160,22 +161,13 @@ def send_http_request(
 
 
 
-
-
-def send_http_request_with_socket(url: str, port: int = 80, headers: Dict[str, str] = None, cookies: Dict[str, str] = None, is_https: bool = False) -> bytes:
-    """
-    원시 소켓을 사용하여 HTTP GET 요청을 보냅니다. 인증 헤더를 자동으로 처리.
-
-    Args:
-        url (str): 요청할 URL
-        port (int): 포트 번호 (기본값: 80)
-        headers (dict): 추가할 HTTP 헤더 (기본값: None)
-        cookies (dict): 쿠키 (기본값: None)
-        is_https (bool): HTTPS 사용 여부 (기본값: False)
-
-    Returns:
-        bytes: 서버의 응답 데이터
-    """
+def send_http_request_with_socket(
+    url: str,
+    port: int = 80,
+    headers: Dict[str, str] = None,
+    cookies: Dict[str, str] = None,
+    is_https: bool = False
+) -> bytes:
     parsed_url = urlparse(url)
     host = parsed_url.hostname
     path = parsed_url.path if parsed_url.path else "/"
@@ -187,7 +179,7 @@ def send_http_request_with_socket(url: str, port: int = 80, headers: Dict[str, s
         "User-Agent": get_random_user_agent(),
     }
 
-    # 사용자 정의 헤더 병합 (기존 값 업데이트)
+    # 사용자 정의 헤더 병합
     if headers:
         default_headers.update(headers)
 
@@ -200,51 +192,42 @@ def send_http_request_with_socket(url: str, port: int = 80, headers: Dict[str, s
     header_lines = "\r\n".join(f"{key}: {value}" for key, value in default_headers.items())
     request = f"GET {path} HTTP/1.1\r\n{header_lines}\r\n\r\n"
 
-    
-
     # 소켓 생성 및 서버 연결
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     if is_https:
-       # SSLContext 생성하여 TLS 버전 설정 (기본 SSLContext 사용)
         context = ssl.create_default_context()
-
-        # SSLv2, SSLv3 비활성화 및 TLS 1.2/1.3 강제 설정
-        context.options |= ssl.OP_NO_SSLv2 | ssl.OP_NO_SSLv3
-        # context.set_ciphers("TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384")  # 최신 암호화 방식 사용
-
-        # 서버와 호환되는 최적의 SSL/TLS 버전 선택
-        # context.set_protocol_versions(ssl.PROTOCOL_TLSv1_2, ssl.PROTOCOL_TLSv1_3)
-        
         context.check_hostname = False
         context.verify_mode = ssl.CERT_NONE
-        
-        # SSL 연결 설정 시 server_hostname을 추가로 설정
-        s = context.wrap_socket(s, server_hostname=host)  # server_hostname을 추가해야 함
+        s = context.wrap_socket(s, server_hostname=host)
 
-    
+    s.settimeout(60)  # 타임아웃 설정
 
-    #s.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
-    s.settimeout(30)
-    s.connect((host, port))
+    MAX_RETRIES = 2
+    for attempt in range(MAX_RETRIES):
+        try:
+            s.connect((host, port))
+            s.sendall(request.encode())
 
-    
+            # 응답 받기
+            response = b""
+            while True:
+                data = s.recv(4096)
+                if not data:
+                    break
+                response += data
 
-    # 요청 전송
-    s.sendall(request.encode())
-
-    
-
-    # 응답 받기
-    response = b""
-    while True:
-        data = s.recv(4096)
-        if not data:
-            break
-        response += data
-
-    s.close()
-    return response
+            s.close()
+            return response
+        except (socket.timeout, ConnectionAbortedError) as e:
+            print(f"Retrying... ({attempt + 1}/{MAX_RETRIES}) - Error: {e}")
+            time.sleep(1)
+        except Exception as e:
+            print(f"Unhandled error: {e}")
+            raise
+    else:
+        print("Max retries reached. Request failed.")
+        return b""  # 빈 응답 반환
 
 
     
@@ -261,7 +244,12 @@ def parse_http_response(response: Dict[str, Union[Dict[str, str], bytes]]) -> Di
     """
     try:
         # 응답 데이터가 비어있는지 확인
-        if not response or "body" not in response or "headers" not in response:
+        if not response:
+            raise ValueError("Response is empty")
+
+        # body와 headers 존재 여부 확인
+        if "body" not in response or "headers" not in response:
+            # print(f"Invalid response format: {response}")  # 디버깅용으로 응답을 출력
             raise ValueError("Invalid response format: Missing body or headers")
 
         # 본문(body)와 헤더(headers) 추출
@@ -290,7 +278,9 @@ def parse_http_response(response: Dict[str, Union[Dict[str, str], bytes]]) -> Di
         }
 
     except Exception as e:
+        # 오류 발생 시 응답 내용과 함께 출력
         # print(f"Error parsing HTTP response: {e}")
+        # print(f"Response content: {response}")
         raise e
 
 
@@ -454,6 +444,8 @@ def socket_fetch_with_redirects(url: str, max_redirects: int = 5, headers: Dict[
         # 요청 보내기
         response = send_http_request_with_socket(url=url, port=(443 if is_https else 80), headers=headers, cookies=current_cookies, is_https=is_https)
 
+        
+        
 
         # 응답 본문이 bytes 타입일 경우 str로 변환
         # if isinstance(response, bytes):
@@ -465,6 +457,9 @@ def socket_fetch_with_redirects(url: str, max_redirects: int = 5, headers: Dict[
             "headers": {},  # 헤더는 parse_http_response에서 처리
             "body": response
         })
+
+
+
 
         status_code = parsed_response["status_code"]
 

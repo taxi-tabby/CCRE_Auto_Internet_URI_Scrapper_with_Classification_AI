@@ -31,6 +31,7 @@ root라는 단위는 시작점을 기리키는 uri이고 해당 기준으로 설
 - pika (rabbitmq)
 - aiohttp (async http request)
 - python-magic, python-magic-bin (binary mime check)
+- pytz (time library)
 - yara, maltrail (ANTI VIRUS 1) (아직 안썼음)
 - pyclamd (ANTI VIRUS 2) (아직 안썼음)
 

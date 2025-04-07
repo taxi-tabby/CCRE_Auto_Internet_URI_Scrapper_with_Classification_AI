@@ -31,10 +31,10 @@ class Robots(Base):
     ruleset_text: Mapped[str] = mapped_column(type_=Text, nullable=False, default="")
     
     # 추가된 일자
-    created_at: Mapped[datetime] = mapped_column(type_=DateTime, server_default=text("CURRENT_TIMESTAMP"), nullable=False)  
+    created_at: Mapped[datetime] = mapped_column(type_=DateTime(timezone=False), server_default=text("CURRENT_TIMESTAMP"), nullable=False)  
     
     # 마지막 수정 일자
-    updated_at: Mapped[datetime] = mapped_column(type_=DateTime, server_default=text("CURRENT_TIMESTAMP"), nullable=False)  
+    updated_at: Mapped[datetime] = mapped_column(type_=DateTime(timezone=False), server_default=text("CURRENT_TIMESTAMP"), nullable=False)  
     
     
     __table_args__ = (

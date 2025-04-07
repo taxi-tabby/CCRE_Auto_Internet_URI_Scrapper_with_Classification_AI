@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from typing import Optional
+import pytz
 from sqlalchemy import Engine, text
 from sqlalchemy.orm import Session
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.stringify.json import stringify_to_json
@@ -274,15 +275,20 @@ def update_leaves(db: Session, leaves: list[Leaves]) -> list[int]:
     return created_ids
 
 
-def update_robot(db: Session, base_domain: str, ruleset_text: str) -> int:
+def update_robot(db: Session, base_domain: str, ruleset_text: str, timezone_str: str = "UTC") -> int:
     """
     robots 테이블에 새로운 레코드를 삽입하거나, 
     base_domain이 중복되는 경우 ruleset_text를 업데이트합니다.
     """
     val_id = -1
+
+    time_zone = pytz.timezone(timezone_str)
+    nowtime = datetime.now(tz=time_zone)
     
-    
-    
+    nowtime_utc = nowtime.astimezone(pytz.utc)
+
+    # print(f"Current time in {time_zone}: {nowtime.timestamp()}")
+
     try:
         # Only one transaction in the entire function call
         with db.begin():  # 트랜잭션 시작
@@ -291,7 +297,7 @@ def update_robot(db: Session, base_domain: str, ruleset_text: str) -> int:
             
             if existing_robot:
                 existing_robot.ruleset_text = ruleset_text
-                existing_robot.updated_at = datetime.now(timezone.utc)
+                existing_robot.updated_at = nowtime_utc
                 val_id = existing_robot.id
             else:
                 new_robot = Robots(id=None, base_domain=base_domain, ruleset_text=ruleset_text)
