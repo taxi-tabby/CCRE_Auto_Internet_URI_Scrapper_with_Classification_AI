@@ -4,6 +4,93 @@ class CCRE_AI_Scrapper_Access_Rule(ABC):
 
 
 
+
+
+
+    @property
+    @abstractmethod
+    def bot_name():
+        """
+        bot name을 설정합니다
+        """
+        pass
+    
+    @bot_name.setter
+    @abstractmethod
+    def bot_name(self, value: str):
+        pass
+
+
+    @property
+    @abstractmethod
+    def save_all_accessible_assets():
+        """
+        접근 가능한 모든 에셋(파일)을 저장 여부를 설정합니다.
+        """
+        pass
+
+    @save_all_accessible_assets.setter
+    @abstractmethod
+    def save_all_accessible_assets(self, value: bool):
+        pass
+
+    @property
+    @abstractmethod
+    def save_all_accessible_assets_mime_types():
+        """
+        저장할 접근 가능한 에셋의 MIME 유형을 설정합니다.
+        """
+        pass
+
+    @save_all_accessible_assets_mime_types.setter
+    @abstractmethod
+    def save_all_accessible_assets_mime_types(self, value: list[str]):
+        pass
+        
+
+    @property
+    @abstractmethod
+    def scan_all_accessible_assets_for_malware():
+        """
+        접근 가능한 모든 에셋(파일)에 악성코드 검사를 할 것인지 설정합니다.
+        """
+        pass
+
+    @scan_all_accessible_assets_for_malware.setter
+    @abstractmethod
+    def scan_all_accessible_assets_for_malware(self, value: bool):
+        pass
+
+
+    @property
+    @abstractmethod
+    def scan_all_accessible_assets_mime_types():
+        """
+        악성코드 검사를 수행할 MIME 유형을 설정합니다.
+        """
+        pass
+
+    @scan_all_accessible_assets_mime_types.setter
+    @abstractmethod
+    def scan_all_accessible_assets_mime_types(self, value: list[str]):
+        pass
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     @property
     @abstractmethod
     def skip_duplication_uri():
