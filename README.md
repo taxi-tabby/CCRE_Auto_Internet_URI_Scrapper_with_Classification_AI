@@ -56,6 +56,29 @@ https://huggingface.co/
 
 ### devlog
 
+#### 2025.04.08 (1)
+
+##### 대시보드 로컬 웹 프레임워크 선정의 시간.
+1. FastAPI
+- 그닥..
+2. Plotly Dash
+- 그닥..
+1. Streamlit    (https://docs.streamlit.io/develop/api-reference)
+- 제한적임. 그냥 오픈소스 노션 제작 툴.
+1. Flask        (틀)
+- 안써요 안써.
+1. Django       (ㅌ)
+- 구려요 구려.
+1. Reflex       (https://reflex.dev/templates/)
+- 좋아보이는데? 좋아보여도 그냥 node를 쓰고 말지란 느낌인데.
+node모르면 배우기 귀찮은 사람이 쓸 것 같다.
+
+그래도 아무리 그래도..
+진짜 1황은 node가 다 먹었다.
+굳이 ssr 필요한거 아니면 python web framework 쓰는건 멍청한 짓이다. 심지어 ssr도 node.js로 할 수 있다. ㅋㅋ 
+api 이외에 용도가 하나도 없네. 상대적으로 지들도 구린거 아니까 경량화해서 api 전용으로 변했구나 싶네. 
+
+그냥 python으로 node 체크하고 node로 웹 프레임워크 돌리는 걸로 하자 그게 맞다.
 
 #### 2025.04.07 (2)
 
@@ -70,7 +93,7 @@ https://huggingface.co/
 1.Stream connection lost: AssertionError(('_AsyncTransportBase._produce() tx buffer size underflow', -36, 1))
 2.Stream connection lost: InvalidFrameError: Invalid frame received: 'Invalid FRAME_END marker
 3.Scheduled callback error: ('_AsyncTransportBase._initate_abort() expected _STATE_ABORTED_BY_USER', 2)
-4. ('_AsyncTransportBase._initate_abort() expected _STATE_ABORTED_BY_USER', 2)
+1. ('_AsyncTransportBase._initate_abort() expected _STATE_ABORTED_BY_USER', 2)
 ```
 
 #### 2025.04.07 (1)
