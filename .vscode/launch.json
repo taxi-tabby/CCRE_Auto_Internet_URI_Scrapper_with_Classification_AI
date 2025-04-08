@@ -9,6 +9,15 @@
             "console": "integratedTerminal"
         },
         {
+            "name": "Console output handling",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/test/コンソール＿テスト.py", // 테스트 파일 경로
+            "console": "integratedTerminal"
+        },
+        
+
+        {
             "name": "Python Debugger: Current File",
             "type": "debugpy",
             "request": "launch",

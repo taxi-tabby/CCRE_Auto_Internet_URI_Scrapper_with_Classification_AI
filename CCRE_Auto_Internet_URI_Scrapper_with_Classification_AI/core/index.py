@@ -1,4 +1,5 @@
 import asyncio
+import curses
 import threading
 import time
 
@@ -8,6 +9,7 @@ from sqlalchemy import text
 from urllib.parse import urlparse
 from datetime import datetime, timedelta
 
+from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.console import CommandHandler
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.predef import CUSTOM_HEADER, GLOBAL_TIMEZONE, MAX_DIRECT_HTTP, USER_AGENT_NAME
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.rds import get_branch_id_if_exists, get_robots_by_domain, get_root_branch_count, increment_branch_duplicated_count, table_init, get_roots_list, update_branches, update_leaves, update_robot, update_roots
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.util import thlog
@@ -411,6 +413,8 @@ def initialize(
     
     add_module_path("../")
     
+    console: CommandHandler = CommandHandler()
+    
     print("hello")
     
     conn = SQLAlchemyConnection()
@@ -466,9 +470,11 @@ def initialize(
     # start all thread
     thread_manager.start_all()
     
+    
+
+    
     try:
-        while True:
-            time.sleep(5)  
+        curses.wrapper(lambda stdscr: console.start(stdscr))
     except KeyboardInterrupt:
         print("Exiting the program.")
     except Exception as e:
