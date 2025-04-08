@@ -5,6 +5,7 @@ from .thread_worker import WorkerThread
 class WatcherThread(threading.Thread):
     def __init__(self, worker_threads, check_interval=2):
         super().__init__()
+        self.name = "watcher_thread"
         self.worker_threads = worker_threads  
         self.check_interval = check_interval 
         self._stop_event = threading.Event()  # 중지 이벤트

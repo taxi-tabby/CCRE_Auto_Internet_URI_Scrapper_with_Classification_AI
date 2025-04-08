@@ -60,7 +60,7 @@ option = Scrapper_Root_Access_Rule(
     
     # Delay (in seconds) between consuming URIs 
     # [-------- Applied --------]
-    consume_delay_seconds=5,  
+    consume_delay_seconds=1.71,  
     
     # Whether to save all accessible assets (set to False means assets won't be saved)
     # [-------- NOT Applied --------]

@@ -9,10 +9,11 @@ from urllib.parse import urlparse
 from datetime import datetime, timedelta
 
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.predef import CUSTOM_HEADER, GLOBAL_TIMEZONE, MAX_DIRECT_HTTP, USER_AGENT_NAME
-from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.rds import get_branch_id_if_exists, get_robots_by_domain, get_root_branch_count, table_init, get_roots_list, update_branches, update_leaves, update_robot, update_roots
+from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.rds import get_branch_id_if_exists, get_robots_by_domain, get_root_branch_count, increment_branch_duplicated_count, table_init, get_roots_list, update_branches, update_leaves, update_robot, update_roots
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.util import thlog
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.crawing import fetch_with_redirects, socket_fetch_with_redirects
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.mime import get_mime_type_from_binary
+from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.parser.html import HTMLSimpleParser
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.parser.json import parse_json_string
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.parser.robots import check_robot_permission_from_rules, fetch_robots_txt
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.parser.uri import normalize_uri_path
@@ -32,7 +33,7 @@ from .import_path import add_module_path
 
 
 
-def start_threaded_callback(name: str, callback, interval_sec):
+def start_threaded_callback(name: str, mq_session: SQLAlchemyConnection, callback, interval_sec):
     """Start the callback in a new thread with the ability to stop it."""
     
     def schedule_callback(callback, interval_sec, stop_event):
@@ -41,7 +42,7 @@ def start_threaded_callback(name: str, callback, interval_sec):
             loop = asyncio.get_event_loop()
             while not stop_event.is_set():  # stop_event가 set되면 종료
                 try:
-                    await callback(stop_event)
+                    await callback(name, mq_session, stop_event)
                 except Exception as e:
                     print(f"Scheduled callback error: {e}")
                     
@@ -68,7 +69,12 @@ def start_threaded_callback(name: str, callback, interval_sec):
 
 
 
-
+async def _inthread_dying_check(rootkey: str, mq_session: SQLAlchemyConnection, event: asyncio.Event):
+    if mq_session._closed_flag:
+        thlog(rootkey, "Message queue connection is now closing.")
+        mq_session.force_channel_consuming_stop() # 메세지 큐 소비 종료
+        event.set() # 종료 이벤트를 설정하여 스레드 종료
+        return
 
 
 def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_session: PikaRabbitMQ, ):
@@ -286,6 +292,8 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
                 if mime == "application/octet-stream" and content_type != mime:
                     mime = content_type
                         
+                html_parser = HTMLSimpleParser(html_string=http_body)   
+                
                 with db_session.get_db() as db:
                     leaf = Leaves()
                     leaf.id = None
@@ -293,6 +301,15 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
                     leaf.branch_id = id
                     leaf.val_classified = 'none-test'
                     leaf.val_mime_type = mime
+                    
+                    if mime == 'text/html':
+                        leaf.val_html_meta_author = html_parser.extract_meta_author()
+                        leaf.val_html_meta_description = html_parser.extract_meta_description()
+                        leaf.val_html_meta_keywords = html_parser.extract_meta_keywords()
+                        leaf.val_html_meta_title = html_parser.extract_title_tags()
+                        leaf.val_html_meta_og_title = html_parser.extract_og_meta_tags('title')
+                        leaf.val_main_language = html_parser.extract_html_lang()
+                    
                     
                     ids = update_leaves(db, leaves=[leaf])
                     if ids:
@@ -321,6 +338,8 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
                     if not id == None:
                         asyncio.run(crawling_and_queuing(id, assembled_uri_with_path))
                         asyncio.run(leaf_up(id, assembled_uri_with_path))
+                else:
+                    increment_branch_duplicated_count(db, d1)
                     
                 if d2 == None:
                     id = branch_up(parent_id, assembled_uri_no_path)
@@ -328,12 +347,14 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
                     if not id == None:
                         asyncio.run(crawling_and_queuing(id, assembled_uri_no_path))
                         asyncio.run(leaf_up(id, assembled_uri_no_path))
-                
+                else:
+                    increment_branch_duplicated_count(db, d2)
             else:
                 # 절대경로
                 assembled_uri = obj['url']
                 
-                if not dup_chk(root.id, assembled_uri):
+                dd = dup_chk(root.id, assembled_uri)
+                if not dd:
                     id = branch_up(parent_id, assembled_uri)
                                         
                     # print(f"branch id: {parent_id} / {id}")
@@ -341,6 +362,8 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
                         
                         asyncio.run(crawling_and_queuing(id, assembled_uri))
                         asyncio.run(leaf_up(id, assembled_uri))
+                else:
+                    increment_branch_duplicated_count(db, dd)
                         
                 
                 
@@ -352,19 +375,7 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
         
         
         
-    # Example usage
-    async def _inthread_dying_check(event: asyncio.Event):
-        if mq_session._closed_flag:
-            thlog(root.root_key, "Message queue connection is now closing.")
-            mq_session.force_channel_consuming_stop() # 메세지 큐 소비 종료
-            event.set() # 종료 이벤트를 설정하여 스레드 종료
-            return
-            
 
-
-    start_threaded_callback(root.root_key, _inthread_dying_check, 2)
-    thlog(root.root_key, f'attached a dying check thread')
-    
     thlog(root.root_key, f'start consuming')
     # 메세지 큐 소비
     # mq_session.set_qos(1)
@@ -446,6 +457,9 @@ def initialize(
         # append mq session for closing
         all_mq_session.append(mq_conn)
         
+        #thread dying check
+        start_threaded_callback(root.root_key, mq_conn, _inthread_dying_check, 4)
+            
         # add worker
         thread_manager.add_worker(target=_worker_start_ingot, args=(root, conn, mq_conn, ), thread_id=i)
         

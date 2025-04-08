@@ -156,6 +156,29 @@ def get_branch_id_if_exists(db: Session, root_id: int, branch_uri: str) -> int |
     return branch.id if branch else None
 
 
+def increment_branch_duplicated_count(db: Session, branch_id: int):
+    """
+    주어진 branch_id에 해당하는 브랜치의 duplicated_cnt 값을 1 증가시킵니다.
+    """
+    try:
+        with db.begin():  # 트랜잭션 시작
+            branch = db.query(Branches).filter_by(id=branch_id).first()
+            if branch:
+                branch._duplicate_count = (branch._duplicate_count or 0) + 1
+    except SQLAlchemyError as e:
+        print(f"SQLAlchemyError occurred: {str(e)}")
+        db.rollback()
+    except Exception as e:
+        print(f"Error occurred: {str(e)}")
+        db.rollback()
+    finally:
+        try:
+            db.commit()
+        except Exception as e:
+            print(f"Commit failed: {str(e)}")
+            db.rollback()
+
+
 def update_branches(db: Session, branches: list[Branches]) -> list[int]:
     """
     branches 리스트를 순회하며 branch_uri가 없는 경우 새로 등록하고,
