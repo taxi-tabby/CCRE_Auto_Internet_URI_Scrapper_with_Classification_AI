@@ -1,117 +1,138 @@
-import curses
-import threading
 import time
+from prompt_toolkit import prompt
+from prompt_toolkit.patch_stdout import patch_stdout
+from prompt_toolkit.completion import WordCompleter
+from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
+from prompt_toolkit.validation import Validator
+from prompt_toolkit.history import InMemoryHistory  # Import history feature
 
 
 class CommandHandler:
-    def __init__(self, max_output_lines=100):
-        self.output_buffer = []  # 출력 버퍼 초기화
-        self.max_output_lines = max_output_lines  # 최대 출력 개수 설정
-        self.command_history = []  # 명령어 기록
-        self.history_index = -1  # 명령어 히스토리 인덱스
 
-    def refresh_output(self, stdscr):
+    def __init__(self):
+        self.running = True
+        self.commands = {}
+        self.word_completer = WordCompleter([])
+        self.validator = Validator.from_callable(
+            self.is_exists_command,
+            error_message='It is not a valid command',
+            move_cursor_to_end=True
+        )
+        
+        self.history = InMemoryHistory()
+
+    def _command_exit(self):
+        """Exit this program"""
+        self.running = False
+
+    def _command_test(self, option_name1: str = 'empty', option_name2: str = 'empty'):
         """
-        출력 버퍼의 내용을 curses 화면에 갱신하는 함수
+        Example command that takes a command and an option.
         """
-        stdscr.clear()  # 화면 초기화
-        y = 0  # 출력 라인 위치
-        output_lines = len(self.output_buffer)  # 출력된 총 줄 수
+        print(f"option_name1: {option_name1} / option_name1: {option_name2}")
 
-        print(output_lines)
-
-        # 출력은 화면 크기에서 입력 부분을 제외한 부분에 출력
-        for line in self.output_buffer[-self.max_output_lines:]:
-            if y < curses.LINES - 1:  # 입력란을 제외한 영역에만 출력
-                # 화면 너비를 초과하지 않도록 텍스트 자르기
-                if len(line) > curses.COLS:
-                    line = line[:curses.COLS - 1]
-                stdscr.addstr(y, 0, line)
-                y += 1
-
-        # 화면 갱신
-        stdscr.refresh()
-
-    def input_thread(self, stdscr):
+    def is_exists_command(self, txt):
         """
-        사용자 입력을 처리하고, 화면을 갱신하는 함수
+        Check if the command exists.
         """
-        input_line = ''  # 사용자 입력 초기화
-        input_pos = 0  # 입력 위치
-        while True:
-            try:
-                # 화면에서 입력창 부분을 지운다.
-                self.clear_input_field(stdscr)
+        if any(txt.lstrip().startswith(cmd) for cmd in self.commands.keys()):
+            return True
+        return False
 
-                # 입력된 텍스트를 화면에 표시
-                stdscr.addstr(curses.LINES - 1, 0, input_line)  # 입력된 텍스트 표시
-                stdscr.refresh()
-
-                key = stdscr.getch()  # 사용자가 입력한 문자
-                if key == 10:  # Enter 키
-                    if input_line:
-                        self.handle_input(input_line)  # 입력된 명령어 처리
-                        input_line = ''  # 명령어 처리 후 입력창 비우기
-                elif key == 27:  # ESC 키 (프로그램 종료)
-                    break
-                elif key == curses.KEY_LEFT:  # 왼쪽 방향키
-                    if input_pos > 0:
-                        input_pos -= 1
-                elif key == curses.KEY_RIGHT:  # 오른쪽 방향키
-                    if input_pos < len(input_line):
-                        input_pos += 1
-                elif key == curses.KEY_UP:  # 위쪽 방향키 (이전 명령어)
-                    if self.history_index > 0:
-                        self.history_index -= 1
-                        input_line = self.command_history[self.history_index]
-                elif key == curses.KEY_DOWN:  # 아래쪽 방향키 (다음 명령어)
-                    if self.history_index < len(self.command_history) - 1:
-                        self.history_index += 1
-                        input_line = self.command_history[self.history_index]
-                elif isinstance(key, str):  # 한글 및 다른 문자는 모두 문자열로 입력됨
-                    input_line += key  # 다른 키는 입력에 추가
-                else:
-                    input_line += chr(key)  # 다른 키는 입력에 추가
-
-            except curses.error as e:
-                # 예외 처리 (입력 위치나 화면 크기 문제로 발생한 예외 처리)
-                pass
-
-    def clear_input_field(self, stdscr):
+    def add_command(self, command, func):
         """
-        입력 필드를 지우는 함수.
-        이 함수는 화면의 하단 입력 필드를 공백으로 덮어씌워서 이전 텍스트를 지웁니다.
+        Add a new command and its corresponding function to the handler.
         """
-        try:
-            max_col = curses.COLS - 1  # 마지막 컬럼은 공백이 들어가야 해서 -1을 해줍니다.
-            max_row = curses.LINES - 1  # 마지막 행은 입력 필드가 있으므로 이전 텍스트가 있을 수 있습니다.
-            stdscr.addnstr(max_row, 0, ' ' * max_col, max_col)  # 마지막 줄을 공백으로 덮음
-            stdscr.refresh()  # 화면 갱신
-        except curses.error as e:
-            # 예외 처리 (에러가 발생해도 계속 실행되도록)
-            pass
+        self.commands[command] = func
+
+        # Update the word completer with the updated list of commands
+        self.word_completer = WordCompleter(list(self.commands.keys()), ignore_case=True, match_middle=True)
 
     def handle_input(self, user_input):
-        # 명령어 처리하는 로직 (간단히 출력)
-        self.print_output(f"입력된 명령어: {user_input}")
-
-    def print_output(self, *args):
         """
-        print와 동일한 방식으로 출력 버퍼에 메시지를 추가
-        *args로 받는 이유는 print와 동일한 파라미터로 처리하기 위해
+        Process the user input and call the correct command function.
         """
-        output = " ".join(map(str, args))  # 입력받은 인자들을 문자열로 변환하여 합침
-        self.output_buffer.append(output)  # 버퍼에 추가
-        # 버퍼 크기가 최대 개수를 초과하면 가장 오래된 항목을 제거
-        if len(self.output_buffer) > self.max_output_lines:
-            self.output_buffer.pop(0)
+        # Empty command input doesn't do anything
+        if user_input.strip() == '':
+            return True
 
-    def start(self, stdscr):
-        # 입력을 받는 스레드 실행
-        threading.Thread(target=self.input_thread, args=(stdscr,), daemon=True).start()
+        # Parse the command and execute
+        self.execute_command(user_input)
 
-        while True:
-            # 출력 버퍼 내용 갱신
-            self.refresh_output(stdscr)
-            time.sleep(0.1)  # 화면 갱신 주기
+        return True
+
+    def execute_command(self, user_input):
+        """
+        Parse the command and options, and execute the corresponding function.
+        """
+        try:
+            # Split user input into command and arguments (space-separated)
+            parts = user_input.strip().split()
+            command_name = parts[0]  # The first part is the command
+            args = parts[1:]  # Remaining parts are arguments/options
+
+            if command_name in self.commands:
+                # Manually handle options if there are any
+                if command_name == "test" and len(args) >= 1:
+                    # Parse options in the form of '--option_name value'
+                    options = self._parse_options(args)  # Parse options after the command
+                    self.commands[command_name](**options)  # Call the command function with options
+                else:
+                    # If no options, just call the function directly
+                    self.commands[command_name](*args)
+            else:
+                print(f"Unknown command: {command_name}")
+        except Exception as e:
+            print(f"Error executing command: {e}")
+
+    def _parse_options(self, args):
+        """
+        Parse options in the form of '--option_name value'
+        """
+        options = {}
+        i = 0
+        while i < len(args):
+            if args[i].startswith('--'):
+                # Option name is the part after '--'
+                option_name = args[i][2:]  # Get option name (remove '--')
+                # Check if the next argument is the option value
+                if i + 1 < len(args):
+                    options[option_name] = args[i + 1]  # Store the option and its value
+                    i += 1
+                else:
+                    print(f"Option {option_name} expects a value")
+            i += 1
+        return options
+
+    def start_input_loop(self):
+        """
+        Loop to handle user input continuously.
+        """
+        with patch_stdout():
+            while self.running:
+                # Use history in the prompt
+                user_input = prompt('> ', 
+                                    auto_suggest=AutoSuggestFromHistory(),
+                                    complete_while_typing=False, 
+                                    completer=self.word_completer, 
+                                    validator=self.validator,
+                                    history=self.history)  
+                
+                # Add the user input to history manually
+                if user_input.strip():
+                    self.history.append_string(user_input.strip()) 
+
+                if not self.handle_input(user_input):
+                    break
+
+    def start(self):
+        """
+        Main function to start the console application.
+        """
+        # Add default commands
+        self.add_command('exit', self._command_exit)
+        self.add_command('test', self._command_test)
+
+        # Start input loop
+        self.start_input_loop()
 

@@ -474,7 +474,7 @@ def initialize(
 
     
     try:
-        curses.wrapper(lambda stdscr: console.start(stdscr))
+        console.start()
     except KeyboardInterrupt:
         print("Exiting the program.")
     except Exception as e:

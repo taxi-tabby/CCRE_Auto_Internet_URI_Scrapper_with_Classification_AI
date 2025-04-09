@@ -14,4 +14,5 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import curses
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.console import CommandHandler
 console: CommandHandler = CommandHandler()
-curses.wrapper(lambda stdscr: console.start(stdscr))
+# curses.wrapper(lambda stdscr: console.start(stdscr))
+console.start()
