@@ -14,11 +14,12 @@ class PikaRabbitMQ:
     
 
     
-    def __init__(self):
+    def __init__(self, name: str):
         self._connection = None
         self._channel = None
         self._closed_flag = False
         self._connection_params = None
+        self.name = name
 
     def connect(self, host, port, username, password, vhost) -> bool:
         try:

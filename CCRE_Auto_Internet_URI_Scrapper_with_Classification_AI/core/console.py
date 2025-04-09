@@ -39,7 +39,7 @@ class CommandHandler:
             return True
         return False
 
-    def add_command(self, command, func):
+    def add_command(self, command: str, func: any):
         """
         Add a new command and its corresponding function to the handler.
         """

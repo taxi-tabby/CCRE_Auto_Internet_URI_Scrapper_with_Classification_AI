@@ -9,6 +9,7 @@ from sqlalchemy import text
 from urllib.parse import urlparse
 from datetime import datetime, timedelta
 
+from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.cli_command import CLICommand
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.console import CommandHandler
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.predef import CUSTOM_HEADER, GLOBAL_TIMEZONE, MAX_DIRECT_HTTP, USER_AGENT_NAME
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.rds import get_branch_id_if_exists, get_robots_by_domain, get_root_branch_count, increment_branch_duplicated_count, table_init, get_roots_list, update_branches, update_leaves, update_robot, update_roots
@@ -413,6 +414,7 @@ def initialize(
     
     add_module_path("../")
     
+    
     console: CommandHandler = CommandHandler()
     
     print("hello")
@@ -449,7 +451,7 @@ def initialize(
     
     for i, root in enumerate(all_roots):
         # make mq connection
-        mq_conn = PikaRabbitMQ()
+        mq_conn = PikaRabbitMQ(root.root_key)
         is_conn = mq_conn.connect(db_mq_connection.host, db_mq_connection.port, db_mq_connection.user, db_mq_connection.password, db_mq_connection.vhost)
         if not is_conn:
             print(f"Failed to connect to RabbitMQ server for root {root.root_key}.")
@@ -471,10 +473,29 @@ def initialize(
     thread_manager.start_all()
     
     
+    cli_commands: CLICommand = CLICommand(all_roots, all_mq_session, conn)
 
     
     try:
+        
+        # 루트 추가/삭제
+        console.add_command("root-add", cli_commands.empty)
+        console.add_command("root-remove", cli_commands.empty)
+        
+        # 루트 정보를 업데이트
+        console.add_command("root-config-update", cli_commands.empty)
+        
+        # 탐색 시작/중지
+        console.add_command("data-stop-branch-growing", cli_commands.empty)
+        console.add_command("data-start-branch-growing", cli_commands.empty)
+        console.add_command("data-restart-branch-growing", cli_commands.empty)
+        
+        # 큐 초기화
+        console.add_command("queue-purge", cli_commands.empty)
+        
+        # 콘솧 프로그램 실행 
         console.start()
+        
     except KeyboardInterrupt:
         print("Exiting the program.")
     except Exception as e:
