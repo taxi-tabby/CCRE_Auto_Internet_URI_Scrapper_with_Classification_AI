@@ -8,6 +8,7 @@ class Scrapper_Root_Access_Rule(CCRE_AI_Scrapper_Access_Rule):
                  skip_duplication_uri: bool = True,
                  refresh_duplicate_uri: bool = False,
                  refresh_duplicate_uri_count: int = 0,
+                 queue_upload_delay_seconds: int = 1,
                  consume_delay_seconds: int = 1,
                  robots_txt_expiration_time: timedelta = timedelta(days=1),
                  save_all_accessible_assets: bool = False,
@@ -21,6 +22,7 @@ class Scrapper_Root_Access_Rule(CCRE_AI_Scrapper_Access_Rule):
             skip_duplication_uri (bool): Determines whether to skip duplicate URIs. Defaults to True.
             refresh_duplicate_uri (bool): Indicates whether to refresh duplicate URIs. Defaults to False.
             refresh_duplicate_uri_count (int): The number of times to refresh duplicate URIs. Defaults to 0.
+            queue_upload_delay_seconds (int): Delay in seconds for queue uploads. Defaults to 1.
             consume_delay_seconds (int): Delay in seconds between consuming URIs. Defaults to 1.
             robots_txt_expiration_time (timedelta): Expiration time for robots.txt rules. Defaults to 1 day.
             save_all_accessible_assets (bool): Whether to save all accessible assets. Defaults to False.
@@ -33,6 +35,7 @@ class Scrapper_Root_Access_Rule(CCRE_AI_Scrapper_Access_Rule):
         self._skip_duplication_uri = skip_duplication_uri
         self._refresh_duplicate_uri = refresh_duplicate_uri
         self._refresh_duplicate_uri_count = refresh_duplicate_uri_count
+        self._queue_upload_delay_seconds = queue_upload_delay_seconds
         self._consume_delay_seconds = consume_delay_seconds
         self._robots_txt_expiration_time = robots_txt_expiration_time
         self._save_all_accessible_assets = save_all_accessible_assets
@@ -71,6 +74,20 @@ class Scrapper_Root_Access_Rule(CCRE_AI_Scrapper_Access_Rule):
     def refresh_duplicate_uri_count(self, value: int):
         self._refresh_duplicate_uri_count = value
 
+
+    # queue_upload_delay_seconds
+    @property
+    def queue_upload_delay_seconds(self) -> int:
+        """
+        Sets the delay time for queue uploads in seconds.
+        """
+        return self._queue_upload_delay_seconds
+
+    @queue_upload_delay_seconds.setter
+    def queue_upload_delay_seconds(self, value: int):
+        self._queue_upload_delay_seconds = value
+
+
     # consume_delay_seconds
     @property
     def consume_delay_seconds(self) -> int:
@@ -79,6 +96,10 @@ class Scrapper_Root_Access_Rule(CCRE_AI_Scrapper_Access_Rule):
     @consume_delay_seconds.setter
     def consume_delay_seconds(self, value: int):
         self._consume_delay_seconds = value
+
+
+
+
 
     # robots_txt_expiration_time
     @property

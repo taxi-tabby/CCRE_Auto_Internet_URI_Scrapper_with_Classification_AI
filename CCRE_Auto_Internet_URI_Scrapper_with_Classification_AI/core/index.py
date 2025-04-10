@@ -30,13 +30,14 @@ from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.sql
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.thread_manager import ThreadManager
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.scrapper_root_access_rule import Scrapper_Root_Access_Rule
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.db.models import *
+from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.thread_worker import WorkerThread
 from .import_path import add_module_path
 
 
 
 
 
-def start_threaded_callback(name: str, mq_session: SQLAlchemyConnection, callback, interval_sec):
+def start_threaded_callback(name: str, mq_session: PikaRabbitMQ | list[PikaRabbitMQ], console: CommandHandler, thread_manager: ThreadManager, dependency_thread: WorkerThread | None, callback, interval_sec):
     """Start the callback in a new thread with the ability to stop it."""
     
     def schedule_callback(callback, interval_sec, stop_event):
@@ -45,9 +46,10 @@ def start_threaded_callback(name: str, mq_session: SQLAlchemyConnection, callbac
             loop = asyncio.get_event_loop()
             while not stop_event.is_set():  # stop_event가 set되면 종료
                 try:
-                    await callback(name, mq_session, stop_event)
+                    await callback(dependency_thread, name, mq_session, console, thread_manager, stop_event)
                 except Exception as e:
-                    print(f"Scheduled callback error: {e}")
+                    # print(f"Scheduled callback error: {e}")
+                    pass
                     
                 await asyncio.sleep(interval_sec)
 
@@ -65,22 +67,61 @@ def start_threaded_callback(name: str, mq_session: SQLAlchemyConnection, callbac
         schedule_callback(callback, interval_sec, stop_event)
         
     # 새로운 스레드에서 실행
-    thread = threading.Thread(target=run_schedule, name=f'_ingot_taskkill_manage_thread__{name}')
+    thread = threading.Thread(target=run_schedule, name=f'_ingot_taskkill_manage_thread__{name}', daemon=True)
     thread.start()  # 새로운 스레드 시작
 
     return stop_event, thread  # stop_event와 thread 반환
 
 
 
-async def _inthread_dying_check(rootkey: str, mq_session: SQLAlchemyConnection, event: asyncio.Event):
-    if mq_session._closed_flag:
-        thlog(rootkey, "Message queue connection is now closing.")
-        mq_session.force_channel_consuming_stop() # 메세지 큐 소비 종료
-        event.set() # 종료 이벤트를 설정하여 스레드 종료
+async def _inthread_dying_check(this_thread: WorkerThread | None, rootkey: str, mq_session: PikaRabbitMQ, console: CommandHandler, thread_manager: ThreadManager, event: asyncio.Event):
+    
+    cnt = thread_manager.get_active_worker_count()
+    # length = len(thread_manager.worker_threads)
+    
+
+
+    if this_thread != None and console.running == False:
+        
+        # thlog(rootkey, f"[sub] Thread manager has {cnt}/{length} workers. Stopping all.")
+
+        if cnt == 0:
+            event.set()
+            return
+
+
+        if mq_session._closed_flag:
+            #consume 동작 중 큐 소비를 하기 위한 대기만 반복되는 경우. 강제로 벗어나기 위해 연결을 해제한다.
+            if mq_session.force_channel_consuming_stop():
+                mq_session.init(is_shutdown_init=True)
+                thlog(rootkey, "Message queue channel closed.")
+
+        if this_thread in thread_manager.worker_threads:
+            this_thread.stop()
+            event.set()
+                
+
+async def _mainthread_dying_check(this_thread: WorkerThread | None, rootkey: str, mq_session: list[PikaRabbitMQ], console: CommandHandler, thread_manager: ThreadManager, event: asyncio.Event):
+    if console.running == False:
+        cnt = thread_manager.get_active_worker_count()
+        length = len(thread_manager.worker_threads)
+        
+        thlog(rootkey, f"Thread manager has {cnt}/{length} workers. Waiting for all threads to finish... \nall ongoing operations will complete before termination. If any operation is in progress, it may take some time to fully shut down.")
+        
+        if cnt != 0:
+            for worker in thread_manager.worker_threads:
+                if worker.is_alive():
+                    worker.stop()
+                    # thlog(rootkey, f"Thread {worker.name} stopped.")
+            
+        if cnt == 0:
+            event.set()
+            
         return
 
 
-def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_session: PikaRabbitMQ, ):
+
+def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_session: PikaRabbitMQ, console: CommandHandler, ):
     """워커 연결용 함수.
     Args:
         root (Scrapper_Root): root 정보가 포함된 데이터
@@ -121,14 +162,11 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
     mq_session.bind_queue(config['exchange_name'], config['queue_name'], config['route_key'])
     
     
-    
-    
-    
-    
     async def crawling_and_queuing(id: int | None, uri: str):
         
-        
-        
+        if console.running == False:
+            return
+            
         try:
             uri_data = urlparse(uri)
             base_url = f"{uri_data.scheme}://{uri_data.hostname}"
@@ -209,8 +247,12 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
                 for link in links:
                     idx += 1
                     link['id'] = id
-                    mq_session.b_publish(config['exchange_name'], config['route_key'], stringify_to_json(link))  
-                    # thlog(root.root_key, f"Queue upload [{id}] - {idx}/{link_length}")
+                    mq_session.b_publish(config['exchange_name'], config['route_key'], stringify_to_json(link)) 
+                    
+                    if console.running == False:
+                        thlog(root.root_key, f"Console has shut down and delays have disappeared in the progress of the scheduled upload queue. {idx}/{link_length}")
+                    else:
+                        time.sleep(rules.queue_upload_delay_seconds)
     
                 
             except Exception as e:
@@ -224,6 +266,12 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
         except Exception as e:
             thlog(root.root_key, 'crawling except - ',e)
 
+
+
+
+
+    if console.running == False:
+        return
 
     # 루트에 브렌치 데이터가 없으면 크롤링 요청
     flag_branch_no_exists = False 
@@ -249,6 +297,10 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
         
     # 메세지 큐 소비 처리
     def callback(ch: pika.channel.Channel, method: pika.spec.Basic.Deliver, properties: pika.spec.BasicProperties, body: bytes):
+        
+        if console.running == False:
+            return
+        
         obj = parse_json_string(body)
         
         parent_id = obj['id']
@@ -376,13 +428,14 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
             # error_details = traceback.format_exc()
             thlog(root.root_key, f"Queue processing error: {e}")
         
-        
-        
+
+
+
 
     thlog(root.root_key, f'start consuming')
     # 메세지 큐 소비
     # mq_session.set_qos(1)
-    mq_session.b_consume(config['queue_name'], callback, delay_sec=rules.consume_delay_seconds)
+    mq_session.b_consume(config['queue_name'], callback, delay_sec=rules.consume_delay_seconds,)
     # 쓰레드 종료 메세지
     thlog(root.root_key, f"worker process complete")
     
@@ -414,7 +467,7 @@ def initialize(
     
     add_module_path("../")
     
-    
+    # 메인 쓰레드가 콘솔 명을을 기다리며 대기한다
     console: CommandHandler = CommandHandler()
     
     print("hello")
@@ -450,26 +503,31 @@ def initialize(
     all_mq_session: list[PikaRabbitMQ] = []
     
     for i, root in enumerate(all_roots):
-        # make mq connection
+        # 메시지 큐 연결
         mq_conn = PikaRabbitMQ(root.root_key)
         is_conn = mq_conn.connect(db_mq_connection.host, db_mq_connection.port, db_mq_connection.user, db_mq_connection.password, db_mq_connection.vhost)
         if not is_conn:
             print(f"Failed to connect to RabbitMQ server for root {root.root_key}.")
             continue
         
-        #channel
+        # 채널 생성
         mq_conn.declare_channel()
         
-        # append mq session for closing
+        # 전역 관리를 위한 메세지 큐 세션 추가
         all_mq_session.append(mq_conn)
         
-        #thread dying check
-        start_threaded_callback(root.root_key, mq_conn, _inthread_dying_check, 4)
-            
-        # add worker
-        thread_manager.add_worker(target=_worker_start_ingot, args=(root, conn, mq_conn, ), thread_id=i)
+
+        # 하위 일꾼 쓰레드
+        worker = thread_manager.add_worker(name=root.root_key, target=_worker_start_ingot, args=(root, conn, mq_conn, console, ), thread_id=i)
         
-    # start all thread
+        # 하위 쓰레드 사망 시 감지해서 트리거하는 쓰레드
+        start_threaded_callback(root.root_key, mq_conn, console, thread_manager, worker, _inthread_dying_check, 5)
+            
+        
+    # 전역에서 하위 쓰레드 죽으면 감지해서 계속 죽이는 쓰레드
+    start_threaded_callback('main', all_mq_session, console, thread_manager, None, _mainthread_dying_check, 10)
+    
+    # 하위 쓰레드 실행
     thread_manager.start_all()
     
     

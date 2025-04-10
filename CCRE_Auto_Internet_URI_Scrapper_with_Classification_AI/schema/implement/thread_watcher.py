@@ -25,7 +25,7 @@ class WatcherThread(threading.Thread):
                     if self.is_active:  # 감시자가 활성 상태일 때만 재시작
                         self.restart_worker_thread(worker)
 
-    def restart_worker_thread(self, worker):
+    def restart_worker_thread(self, worker: WorkerThread):
         """쓰레드를 재시작하는 메서드"""
         if worker.is_alive():
             print(f"Stopping thread {worker.thread_id}...")
@@ -34,7 +34,7 @@ class WatcherThread(threading.Thread):
 
         print(f"Restarting thread {worker.thread_id}...")
         # 새로운 워커 쓰레드를 생성하여 다시 시작
-        new_worker = WorkerThread(worker.thread_id, worker.target, worker.args)
+        new_worker = WorkerThread(worker.thread_id, worker.target, worker.args, custom_name=worker.custom_name)
         self.worker_threads.remove(worker)  # 기존 워커 쓰레드를 리스트에서 제거
         self.worker_threads.append(new_worker)  # 새로운 워커 쓰레드를 리스트에 추가
         new_worker.start()

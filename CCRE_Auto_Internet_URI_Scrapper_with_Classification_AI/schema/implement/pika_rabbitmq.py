@@ -5,6 +5,7 @@ import pika.channel
 import pika.spec
 
 
+
 class PikaRabbitMQ:
     """
     ### Default rabbitMQ class to control basic rabbitMQ operations
@@ -52,6 +53,22 @@ class PikaRabbitMQ:
 
         return False
 
+    def init(self, is_shutdown_init: bool = False):
+        # Clean up existing connection and channel
+        if self._chk_usable() and self._chk_channel():
+            self._channel.close()
+            
+        if self._chk_conn():
+            self._connection.close()
+
+        self._channel = None
+        self._connection = None
+        
+        
+        if is_shutdown_init == False:
+            self._closed_flag = False
+        
+
     def reconnect(self) -> bool:
         """
         ### Reconnects to RabbitMQ by cleaning up all resources and retrying.
@@ -61,14 +78,7 @@ class PikaRabbitMQ:
             return False
 
         # Clean up existing connection and channel
-        if self._chk_usable() and self._channel.is_open:
-            self._channel.close()
-        if self._chk_conn() and self._connection.is_open:
-            self._connection.close()
-
-        self._channel = None
-        self._connection = None
-        self._closed_flag = False
+        self.init()
 
         # Retry connection
         return self.connect(
@@ -147,7 +157,7 @@ class PikaRabbitMQ:
                 arguments=arguments,
             )
         else:
-            print("connection or channel is not usable")
+            print("connection or channel is not usable (declare_queue)")
             
             
     
@@ -169,7 +179,7 @@ class PikaRabbitMQ:
                 arguments=arguments
             )
         else:
-            print("connection or channel is not usable")
+            print("connection or channel is not usable (declare_exchange)")
     
     def bind_queue(self, exchange: str, queue_name: str, routing_key: str, arguments=None):
         """
@@ -185,7 +195,7 @@ class PikaRabbitMQ:
                 arguments=arguments
             )
         else:
-            print("connection or channel is not usable")
+            print("connection or channel is not usable (bind_queue)")
     
     def unbind_queue(self, exchange: str, queue_name: str, routing_key: str):
         """
@@ -195,7 +205,7 @@ class PikaRabbitMQ:
         if self._chk_usable():
             self._channel.queue_unbind(exchange=exchange, queue=queue_name, routing_key=routing_key)
         else:
-            print("connection or channel is not usable")
+            print("connection or channel is not usable (unbind_queue)")
             
     def delete_queue(self, queue_name: str):
         """
@@ -205,7 +215,7 @@ class PikaRabbitMQ:
         if self._chk_usable():
             self._channel.queue_delete(queue=queue_name)    
         else:
-            print("connection or channel is not usable")
+            print("connection or channel is not usable (delete_queue)")
             
             
     def delete_exchange(self, exchange_name: str):
@@ -216,7 +226,7 @@ class PikaRabbitMQ:
         if self._chk_usable():
             self._channel.exchange_delete(exchange=exchange_name)
         else:
-            print("connection or channel is not usable")
+            print("connection or channel is not usable (delete_exchange)")
     
     def set_qos(self, prefetch_count: int):
         """
@@ -226,7 +236,7 @@ class PikaRabbitMQ:
         if self._chk_usable():
             self._channel.basic_qos(prefetch_count=prefetch_count)
         else:
-            print("connection or channel is not usable")
+            print("connection or channel is not usable (set_qos)")
         
         
         
@@ -243,7 +253,7 @@ class PikaRabbitMQ:
             self._channel.basic_publish(exchange=exchange, routing_key=routing_key, body=message, properties=properties, )
             
         else:
-            print("connection or channel is not usable")
+            print("connection or channel is not usable (b_publish)")
         
         
         
@@ -266,6 +276,7 @@ class PikaRabbitMQ:
                     ch.stop_consuming()
                     
                    
+            close()
             callback(ch, method, properties, body)
             
             # Optional delay after callback execution
@@ -287,7 +298,7 @@ class PikaRabbitMQ:
             self._channel.basic_consume(queue=queue_name, on_message_callback=decorated_callback, auto_ack=False, consumer_tag=queue_name, exclusive=False,)
             self._channel.start_consuming()
         else:
-            print("Connection or channel is not usable.")
+            print("Connection or channel is not usable (_chk_usable)")
         
         
     
@@ -297,9 +308,12 @@ class PikaRabbitMQ:
         ### 채널에서 메세지 소비 강제 중지
         """
         if self._chk_channel():
+            self._closed_flag = True
             self._channel.stop_consuming()
+            return True
         else:
-            print("connection or channel is not usable")
+            # print("connection or channel is not usable (force_channel_consuming_stop)")
+            return False
         
     def stop_consuming(self):
         """
@@ -309,8 +323,11 @@ class PikaRabbitMQ:
         if self._chk_channel():
             # self._channel.stop_consuming()
             self._closed_flag = True
+            return True
         else:
-            print("connection or channel is not usable")
+            # print("connection or channel is not usable (stop_consuming)")
+            return False
+
         
         
     def close(self):

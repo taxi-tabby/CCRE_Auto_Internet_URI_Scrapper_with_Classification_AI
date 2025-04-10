@@ -35,6 +35,7 @@ root라는 단위는 시작점을 기리키는 uri이고 해당 기준으로 설
 - prompt_toolkit (cli console)
 - yara, maltrail (ANTI VIRUS 1) (아직 안썼음)
 - pyclamd (ANTI VIRUS 2) (아직 안썼음)
+- psycopg2 (postgresql)
 
 ### tools
 - rabbitMQ
@@ -57,11 +58,24 @@ https://huggingface.co/
 
 ### devlog
 
+#### 2025.04.11 (1)
+
+> RDS를 외부로 빼서 분산 처리
+![4-3.gif](./readme/6.png)
+
 #### 2025.04.10 (2)
 
 그리고 지금 중복체크를 uri 그대로 하는데. 당연하게도 이러면 빅데이터가 쌓였을 때 감당이 안댐.
 아무리 btree가 빠르다고 해도 색인할 키가 필요하니 uri에 대해 유효한 방식으로 키 생성해서 익덱싱 되도록 해야 함.
 풀텍스트 인덱스 피하는건 가능하겠네 uri이니 / segment 같은 보편적인 기준이 있다.
+
+```console
+[2025-04-09 19:02:15] [test_example3_zh] leaf_up error: The markup you provided was rejected by the parser. Trying a different parser or a different encoding may help.
+
+Original exception(s) from parser:
+ AssertionError: expected name token at '<![\\7\x0ckQgz\x10?e[\x7fLS\x04s>'
+ ```
+
 
 #### 2025.04.10 (1)
 

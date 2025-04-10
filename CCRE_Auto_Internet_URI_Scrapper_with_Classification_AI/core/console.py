@@ -1,4 +1,3 @@
-import time
 from prompt_toolkit import prompt
 from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.completion import WordCompleter
@@ -24,6 +23,7 @@ class CommandHandler:
     def _command_exit(self):
         """Exit this program"""
         self.running = False
+        
 
     def _command_test(self, option_name1: str = 'empty', option_name2: str = 'empty'):
         """

@@ -28,8 +28,6 @@ RDS 동작 모음.
 
 
 
-
-
 def _chk_rds_table_exists(db: Session, db_type: DatabaseType, table_name: str) -> bool:
     """
     Check if the table exists in the database.
@@ -38,23 +36,19 @@ def _chk_rds_table_exists(db: Session, db_type: DatabaseType, table_name: str) -
         with db:
             
             if db_type == DatabaseType.POSTGRESQL:
-                result = db.execute(f"SELECT to_regclass('{table_name}')")
+                # 'text()'로 SQL 문을 감싸줍니다
+                result = db.execute(text(f"SELECT to_regclass('{table_name}')"))
                 return bool(result.scalar())
-            
-            
             
             elif db_type == DatabaseType.MYSQL:
                 query = f"SHOW TABLES LIKE '{table_name}'"
                 result = db.execute(query)
                 return result.fetchone() is not None
             
-            
-            
             elif db_type == DatabaseType.SQLITE3:
                 query = text(f"SELECT name FROM sqlite_master WHERE type='table' AND name=:table_name")
                 result = db.execute(query, {"table_name": table_name})
                 return result.fetchone() is not None
-            
             
             else:
                 raise ValueError(f"Unsupported database type: {db_type}")

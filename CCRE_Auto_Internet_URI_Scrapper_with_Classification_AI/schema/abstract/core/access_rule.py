@@ -4,6 +4,22 @@ from datetime import timedelta
 class CCRE_AI_Scrapper_Access_Rule(ABC):
 
 
+    @property
+    @abstractmethod
+    def queue_upload_delay_seconds():
+        """
+        URI 당 queue에 업로드되는 딜레이를 정의합니다.
+        이 값은 소비 지연 시간과 마찬가지로 성능에 영향응 크기 끼칩니다.
+        하나의 uri 에서 발견화는 다른 uri 가 100초이고 지연이 1초로 정의되어 있다면 업로드 완료까지 100+a 초가 소요됩니다.
+        폭발적으로 입력되는 경우 성능의 저하가 발생할 수 있으니 해당 값을 조정하여 성능을 조율 가능합니다.
+        """
+        pass
+
+    @queue_upload_delay_seconds.setter
+    @abstractmethod
+    def queue_upload_delay_seconds(self, value: int):
+        pass
+
 
 
     @property
@@ -11,6 +27,10 @@ class CCRE_AI_Scrapper_Access_Rule(ABC):
     def consume_delay_seconds():
         """
         소비 지연 시간을 초 단위로 설정합니다.
+        이 값은 성능에 큰 영향을 미칩니다.
+        소비 지연 시간은 큐에서 메시지를 소비하는 데 걸리는 시간을 나타냅니다.
+        이 값이 너무 작으면 소비 속도가 빨라져서 시스템에 부하를 줄 수 있습니다.
+        반대로 너무 크면 소비 속도가 느려져서 탐색 속도의 저하를 초래할 수 있습니다
         """
         pass
 
@@ -18,6 +38,7 @@ class CCRE_AI_Scrapper_Access_Rule(ABC):
     @abstractmethod
     def consume_delay_seconds(self, value: int):
         pass
+
 
 
 

@@ -6,12 +6,12 @@ from .thread_watcher import WatcherThread
 
 class ThreadManager:
     def __init__(self):
-        self.worker_threads = []  # 관리할 작업 쓰레드
+        self.worker_threads:list['WorkerThread'] = []  # 관리할 작업 쓰레드
         self.watcher_thread = None  # 관리할 감시자 쓰레드
 
-    def add_worker(self, target, args=(), thread_id: (int|None)=None):
+    def add_worker(self, name: str, target, args=(), thread_id: (int|None)=None):
         """작업 쓰레드를 추가하는 메서드"""
-        worker_thread = WorkerThread(thread_id, target, args)
+        worker_thread = WorkerThread(thread_id, target, args, custom_name=name )
         self.worker_threads.append(worker_thread)
         return worker_thread
 
@@ -36,6 +36,7 @@ class ThreadManager:
         if self.watcher_thread:
             print('watcher thread signaled to stop')
             self.watcher_thread.stop()
+    
 
     def join_all(self):
         """모든 쓰레드가 종료될 때까지 기다리는 메서드"""
