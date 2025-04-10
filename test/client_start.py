@@ -68,17 +68,17 @@ option = Scrapper_Root_Access_Rule(
     # [-------- NOT Applied --------]
     refresh_duplicate_uri_count=10,
     
-    # robots.txt cache expiration time (set to 5 minutes)
+    # robots.txt cache expiration time (set to 10 minutes)
     # [-------- Applied --------]
-    robots_txt_expiration_time=timedelta(minutes=5),
+    robots_txt_expiration_time=timedelta(minutes=10),
     
     # Delay (in seconds) between uploading to the queue
     # [-------- Applied --------]
-    queue_upload_delay_seconds=0.6,
+    queue_upload_delay_seconds=1,
     
     # Delay (in seconds) between consuming URIs 
     # [-------- Applied --------]
-    consume_delay_seconds=0.5,  
+    consume_delay_seconds=1,
     
     # Whether to save all accessible assets (set to False means assets won't be saved)
     # [-------- NOT Applied --------]
@@ -152,30 +152,30 @@ client_start(
         Scrapper_Root('test_example40_uk', access_rule=option, root_uri='https://www.bbc.co.uk'),
         
         # # group2
-        # Scrapper_Root('test_example41_kr7', access_rule=option, root_uri='https://news.daum.net'),
-        # Scrapper_Root('test_example42_in', access_rule=option, root_uri='https://timesofindia.indiatimes.com'),
-        # Scrapper_Root('test_example43_za2', access_rule=option, root_uri='https://www.timeslive.co.za'),
-        # Scrapper_Root('test_example44_eg2', access_rule=option, root_uri='https://www.almasryalyoum.com'),
-        # Scrapper_Root('test_example45_sa2', access_rule=option, root_uri='https://www.okaz.com.sa'),
-        # Scrapper_Root('test_example46_br2', access_rule=option, root_uri='https://www.globo.com'),
-        # Scrapper_Root('test_example47_ca2', access_rule=option, root_uri='https://www.cbc.ca'),
-        # Scrapper_Root('test_example48_au2', access_rule=option, root_uri='https://www.news.com.au'),
-        # Scrapper_Root('test_example49_ng2', access_rule=option, root_uri='https://www.vanguardngr.com'),
-        # Scrapper_Root('test_example50_tw', access_rule=option, root_uri='https://www.ettoday.net'),
-        # Scrapper_Root('test_example51_hk', access_rule=option, root_uri='https://www.hk01.com'),
-        # Scrapper_Root('test_example52_my2', access_rule=option, root_uri='https://www.malaymail.com'),
-        # Scrapper_Root('test_example53_ke', access_rule=option, root_uri='https://www.standardmedia.co.ke'),
-        # Scrapper_Root('test_example54_ng3', access_rule=option, root_uri='https://www.thecable.ng'),
-        # Scrapper_Root('test_example55_in2', access_rule=option, root_uri='https://www.ndtv.com'),
-        # Scrapper_Root('test_example56_ar2', access_rule=option, root_uri='https://www.lanacion.com.ar'),
-        # Scrapper_Root('test_example57_kr8', access_rule=option, root_uri='https://tvchosun.com'),
-        # Scrapper_Root('test_example58_gr', access_rule=option, root_uri='https://www.protothema.gr'),
-        # Scrapper_Root('test_example59_cz', access_rule=option, root_uri='https://www.idnes.cz'),
-        # Scrapper_Root('test_example60_ro', access_rule=option, root_uri='https://www.digi24.ro'),
-        # Scrapper_Root('test_example61_bh', access_rule=option, root_uri='https://www.albiladpress.com'),
-        # Scrapper_Root('test_example62_qa', access_rule=option, root_uri='https://www.aljazeera.net'),
-        # Scrapper_Root('test_example63_ae2', access_rule=option, root_uri='https://www.khaleejtimes.com'),
-        # Scrapper_Root('test_example64_jm', access_rule=option, root_uri='https://www.jamaicaobserver.com'),
-        # Scrapper_Root('test_example65_hu', access_rule=option, root_uri='https://www.index.hu'),
+        Scrapper_Root('test_example41_kr7', access_rule=option, root_uri='https://news.daum.net'),
+        Scrapper_Root('test_example42_in', access_rule=option, root_uri='https://timesofindia.indiatimes.com'),
+        Scrapper_Root('test_example43_za2', access_rule=option, root_uri='https://www.timeslive.co.za'),
+        Scrapper_Root('test_example44_eg2', access_rule=option, root_uri='https://www.almasryalyoum.com'),
+        Scrapper_Root('test_example45_sa2', access_rule=option, root_uri='https://www.okaz.com.sa'),
+        Scrapper_Root('test_example46_br2', access_rule=option, root_uri='https://www.globo.com'),
+        Scrapper_Root('test_example47_ca2', access_rule=option, root_uri='https://www.cbc.ca'),
+        Scrapper_Root('test_example48_au2', access_rule=option, root_uri='https://www.news.com.au'),
+        Scrapper_Root('test_example49_ng2', access_rule=option, root_uri='https://www.vanguardngr.com'),
+        Scrapper_Root('test_example50_tw', access_rule=option, root_uri='https://www.ettoday.net'),
+        Scrapper_Root('test_example51_hk', access_rule=option, root_uri='https://www.hk01.com'),
+        Scrapper_Root('test_example52_my2', access_rule=option, root_uri='https://www.malaymail.com'),
+        Scrapper_Root('test_example53_ke', access_rule=option, root_uri='https://www.standardmedia.co.ke'),
+        Scrapper_Root('test_example54_ng3', access_rule=option, root_uri='https://www.thecable.ng'),
+        Scrapper_Root('test_example55_in2', access_rule=option, root_uri='https://www.ndtv.com'),
+        Scrapper_Root('test_example56_ar2', access_rule=option, root_uri='https://www.lanacion.com.ar'),
+        Scrapper_Root('test_example57_kr8', access_rule=option, root_uri='https://tvchosun.com'),
+        Scrapper_Root('test_example58_gr', access_rule=option, root_uri='https://www.protothema.gr'),
+        Scrapper_Root('test_example59_cz', access_rule=option, root_uri='https://www.idnes.cz'),
+        Scrapper_Root('test_example60_ro', access_rule=option, root_uri='https://www.digi24.ro'),
+        Scrapper_Root('test_example61_bh', access_rule=option, root_uri='https://www.albiladpress.com'),
+        Scrapper_Root('test_example62_qa', access_rule=option, root_uri='https://www.aljazeera.net'),
+        Scrapper_Root('test_example63_ae2', access_rule=option, root_uri='https://www.khaleejtimes.com'),
+        Scrapper_Root('test_example64_jm', access_rule=option, root_uri='https://www.jamaicaobserver.com'),
+        Scrapper_Root('test_example65_hu', access_rule=option, root_uri='https://www.index.hu'),
     ]
 )
