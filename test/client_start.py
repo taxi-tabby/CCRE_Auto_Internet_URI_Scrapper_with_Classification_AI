@@ -28,9 +28,9 @@ from datetime import timedelta
 
 rds_connection = Connection_Info()
 rds_connection.db_type = DatabaseType.POSTGRESQL
-rds_connection.database = "test_1"
-rds_connection.host = "localhost"
+rds_connection.host = "192.168.0.10"
 rds_connection.port = 5432
+rds_connection.database = "test_1"
 rds_connection.user = "postgres"
 rds_connection.password = "15515995"
 
@@ -39,7 +39,7 @@ rds_connection.password = "15515995"
 # queue connection
 rabbit_mq = Connection_Info()
 rabbit_mq.db_type = DatabaseType.RABBITMQ
-rabbit_mq.host = "localhost"
+rabbit_mq.host = "192.168.0.10"
 rabbit_mq.port = 5672
 rabbit_mq.user = "test_user"
 rabbit_mq.password = "1234"
