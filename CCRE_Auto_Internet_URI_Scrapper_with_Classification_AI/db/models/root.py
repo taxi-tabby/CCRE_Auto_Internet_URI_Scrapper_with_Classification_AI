@@ -1,4 +1,3 @@
-
 from typing import List
 from typing import Optional
 from sqlalchemy import BigInteger, Integer, ForeignKey, Text, text, Index
@@ -19,7 +18,7 @@ class Roots(Base):
     __tablename__ = "roots"
     
     # 고유번호
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True, type_=Integer)
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True, type_=BigInteger)
     
     # 루트 고유 지정 키
     root_key: Mapped[str] = mapped_column(type_=String(255), nullable=False)
@@ -31,7 +30,7 @@ class Roots(Base):
     rules: Mapped[str] = mapped_column(type_=Text, nullable=False)
     
     __table_args__ = (
-        Index('default_root_index', 'root_key', 'root_uri'),
+        Index('idx_roots_key_uri', 'root_key', 'root_uri'),
     )
     
     

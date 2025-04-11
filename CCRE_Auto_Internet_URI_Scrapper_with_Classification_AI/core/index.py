@@ -353,7 +353,7 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
                     leaf.id = None
                     leaf.root_id = root.id
                     leaf.branch_id = id
-                    leaf.val_classified = 'none-test'
+                    # leaf.val_classified = 'none-test'
                     leaf.val_mime_type = mime
                     
                     if mime == 'text/html':

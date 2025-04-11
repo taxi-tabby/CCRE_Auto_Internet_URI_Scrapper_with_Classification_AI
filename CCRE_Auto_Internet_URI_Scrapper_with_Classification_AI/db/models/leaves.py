@@ -1,4 +1,3 @@
-
 from datetime import datetime
 from typing import List
 from typing import Optional
@@ -21,17 +20,19 @@ class Leaves(Base):
     __tablename__ = "leaves"
     
     # 고유번호
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True, type_=Integer)
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True, type_=BigInteger)
     
     # 루트 id
-    root_id: Mapped[int] = mapped_column(ForeignKey("roots.id"), nullable=False, type_=Integer)
+    root_id: Mapped[int] = mapped_column(ForeignKey("roots.id"), nullable=False, type_=BigInteger)
     
     # 브랜치 id
-    branch_id: Mapped[int] = mapped_column(ForeignKey("branches.id"), nullable=False, type_=Integer)
+    branch_id: Mapped[int] = mapped_column(ForeignKey("branches.id"), nullable=False, type_=BigInteger)
     
     # 식별된 데이터 문자열
-    val_classified: Mapped[str] = mapped_column(type_=Text, nullable=False)
+    # val_classified: Mapped[str] = mapped_column(type_=Text, nullable=False)
     
+    # 따로 테이블 분리할까 했는데. 너무 과하게 쪼개는것도 문제라서..
+    # 그냥 여기서 처리함.
     val_html_meta_title: Mapped[Optional[str]] = mapped_column(type_=Text, nullable=True) #html 의 title 태그의 내용
     val_html_meta_og_title: Mapped[Optional[str]] = mapped_column(type_=Text, nullable=True) #html 의 meta 태그 중 og:title 의 내용
     val_html_meta_robots: Mapped[Optional[str]] = mapped_column(type_=Text, nullable=True) #html 의 meta 태그 중 robots 의 내용
@@ -45,12 +46,20 @@ class Leaves(Base):
     # 메인 언어
     val_main_language: Mapped[Optional[str]] = mapped_column(type_=Text, nullable=True) 
     
+    # 콘텐츠 사이즈
+    val_content_size: Mapped[Optional[int]] = mapped_column(type_=Integer, nullable=True)
+    
+    # 링크 카운트
+    # 해당 uri에서 발견된 링크의 갯수
+    link_cnt: Mapped[int] = mapped_column(type_=Integer, nullable=False, default=0)
+    
+    
     # 추가된 일자
     created_at: Mapped[datetime] = mapped_column(type_=DateTime, server_default=text("CURRENT_TIMESTAMP"), nullable=False)  
     
     
     __table_args__ = (
-        Index('default_leaves_index', 'root_id', 'branch_id', 'id'),
+        Index('idx_leaves_root_branch_id', 'root_id', 'branch_id', 'id'),
     )
     
     

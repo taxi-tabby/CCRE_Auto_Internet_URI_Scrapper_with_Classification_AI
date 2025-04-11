@@ -1,4 +1,3 @@
-
 from datetime import datetime
 from typing import List
 from typing import Optional
@@ -20,14 +19,14 @@ class Branches(Base):
     __tablename__ = "branches"
     
     # 고유번호
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True, type_=Integer)
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True, type_=BigInteger)
     
     # 부모 브랜치 id
-    parent_id: Mapped[Optional[int]] = mapped_column(ForeignKey("branches.id"), nullable=True, type_=Integer)
+    parent_id: Mapped[Optional[int]] = mapped_column(ForeignKey("branches.id"), nullable=True, type_=BigInteger)
     # parent_id: Mapped[Optional[int]] = mapped_column(nullable=True, type_=Integer, default=None)
     
     # 루트 id
-    root_id: Mapped[int] = mapped_column(ForeignKey("roots.id"), nullable=False, type_=Integer)
+    root_id: Mapped[int] = mapped_column(ForeignKey("roots.id"), nullable=False, type_=BigInteger)
     
     
     # 브랜치에서 검색할 uri
@@ -42,8 +41,10 @@ class Branches(Base):
     
     # 인덱스 설정
     __table_args__ = (
-        Index('default_branch_index', 'root_id', 'id'),
-        Index('default_branch_uri_index', 'branch_uri'),
+        Index('idx_branches_default', 'root_id', 'id'),
+        Index('idx_branches_uri', 'branch_uri'),
+        Index('idx_branches_root_id', 'root_id'),
+        Index('idx_branches_parent_id', 'root_id', 'parnet_id'),
     )
     
     

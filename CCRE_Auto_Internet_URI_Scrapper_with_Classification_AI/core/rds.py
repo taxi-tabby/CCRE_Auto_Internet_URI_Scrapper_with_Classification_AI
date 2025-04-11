@@ -261,7 +261,7 @@ def update_leaves(db: Session, leaves: list[Leaves]) -> list[int]:
                     new_leaf = Leaves(
                         root_id=leaf.root_id,
                         branch_id=leaf.branch_id,
-                        val_classified=leaf.val_classified,
+                        # val_classified=leaf.val_classified,
                         val_html_meta_title=leaf.val_html_meta_title,
                         val_html_meta_og_title=leaf.val_html_meta_og_title,
                         val_html_meta_robots=leaf.val_html_meta_robots,
