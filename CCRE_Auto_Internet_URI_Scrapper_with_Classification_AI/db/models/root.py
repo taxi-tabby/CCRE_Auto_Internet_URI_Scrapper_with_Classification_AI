@@ -11,11 +11,13 @@ from .base import Base
 
 class Roots(Base):
     """루트 테이블
-    
+                
     Returns:
         _type_: sqlalchemy model
     """
     __tablename__ = "roots"
+    
+
     
     # 고유번호
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True, type_=BigInteger)

@@ -22,17 +22,17 @@ from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.scr
 from datetime import timedelta
 
 # create rds db connection
-# rds_connection = Connection_Info()
-# rds_connection.db_type = DatabaseType.SQLITE3
-# rds_connection.database = "test.db"
-
 rds_connection = Connection_Info()
-rds_connection.db_type = DatabaseType.POSTGRESQL
-rds_connection.host = "192.168.0.10"
-rds_connection.port = 5432
-rds_connection.database = "test_1"
-rds_connection.user = "postgres"
-rds_connection.password = "15515995"
+rds_connection.db_type = DatabaseType.SQLITE3
+rds_connection.database = "test.db"
+
+# rds_connection = Connection_Info()
+# rds_connection.db_type = DatabaseType.POSTGRESQL
+# rds_connection.host = "192.168.0.10"
+# rds_connection.port = 5432
+# rds_connection.database = "test_1"
+# rds_connection.user = "postgres"
+# rds_connection.password = "15515995"
 
 
 

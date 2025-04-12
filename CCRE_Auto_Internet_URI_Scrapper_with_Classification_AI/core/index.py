@@ -501,6 +501,9 @@ def initialize(
     
     all_mq_session: list[PikaRabbitMQ] = []
     
+    #test
+    all_roots = []
+    
     for i, root in enumerate(all_roots):
         # 메시지 큐 연결
         mq_conn = PikaRabbitMQ(root.root_key)
@@ -520,11 +523,11 @@ def initialize(
         worker = thread_manager.add_worker(name=root.root_key, target=_worker_start_ingot, args=(root, conn, mq_conn, console, ), thread_id=i)
         
         # 하위 쓰레드 사망 시 감지해서 트리거하는 쓰레드
-        start_threaded_callback(root.root_key, mq_conn, console, thread_manager, worker, _inthread_dying_check, 5)
+        start_threaded_callback(root.root_key, mq_conn, console, thread_manager, worker, _inthread_dying_check, 10)
             
         
     # 전역에서 하위 쓰레드 죽으면 감지해서 계속 죽이는 쓰레드
-    start_threaded_callback('main', all_mq_session, console, thread_manager, None, _mainthread_dying_check, 10)
+    start_threaded_callback('main', all_mq_session, console, thread_manager, None, _mainthread_dying_check, 30)
     
     # 하위 쓰레드 실행
     thread_manager.start_all()
@@ -535,20 +538,68 @@ def initialize(
     
     try:
         
-        # 루트 추가/삭제
-        console.add_command("root-add", cli_commands.empty)
-        console.add_command("root-remove", cli_commands.empty)
+        # 루트 추가/삭제/시작/중지/재시작/상태보기
+        console.add_command("root-add", cli_commands.empty)                 # 루트 추가
+        console.add_command("root-restart", cli_commands.empty)             # 루트 재시작
+        console.add_command("root-remove", cli_commands.empty)              # 루트 삭제
+        console.add_command("root-start", cli_commands.empty)               # 루트 시작
+        console.add_command("root-stop", cli_commands.empty)                # 루트 중지
+        console.add_command("root-status", cli_commands.empty)              # 루트 상태 보기
         
+        
+        # 루트에 관련된 정보 명령어
+        console.add_command("root-get-branch-count", cli_commands.empty)                # 루트에 속한 브랜치 수 보기
+        console.add_command("root-get-leaf-count", cli_commands.empty)                  # 루트에 속한 리프 수 보기
+        console.add_command("root-get-leaf-count-with-mime", cli_commands.empty)        # 루트에 속한 리프 수 보기
+
         # 루트 정보를 업데이트
-        console.add_command("root-config-update", cli_commands.empty)
+        console.add_command("root-config-update", cli_commands.empty)           # 루트 정보를 수정함. 이 과정 후 root를 재시작 해야함.
         
         # 탐색 시작/중지
-        console.add_command("data-stop-branch-growing", cli_commands.empty)
-        console.add_command("data-start-branch-growing", cli_commands.empty)
-        console.add_command("data-restart-branch-growing", cli_commands.empty)
+        console.add_command("data-stop-branch-growing", cli_commands.empty)     # root를 켜서 queue 소비는 하는데 더 이상 확장 가능한 링크를 추가하지 않음
+        console.add_command("data-start-branch-growing", cli_commands.empty)    # root를 껐던걸 다시 켜서 링크를 추가하길 시작함
         
-        # 큐 초기화
-        console.add_command("queue-purge", cli_commands.empty)
+        # api 서비스 시작/중지/상태보기/포트변경
+        console.add_command("api-server-start", cli_commands.empty)             # api 서버 시작
+        console.add_command("api-server-stop", cli_commands.empty)              # api 서버 중지
+        console.add_command("api-server-status", cli_commands.empty)            # api 서버 상태 보기
+        console.add_command("api-server-port-change", cli_commands.empty)       # api 서버 포트 변경
+        
+        # rabbitmq 관련 명령어
+        console.add_command("rabbitmq-queue-sampling", cli_commands.empty)       # 큐 데이터 추출해서 보기
+        console.add_command("rabbitmq-queue-purge", cli_commands.empty)          # 큐 데이터 날리기
+        console.add_command("rabbitmq-queue-purge-all", cli_commands.empty)      # 모든 큐 데이터 날리기
+        
+        console.add_command("rabbitmq-delete-queue", cli_commands.empty)
+        console.add_command("rabbitmq-delete-queue-all", cli_commands.empty)
+        console.add_command("rabbitmq-delete-queue-bind", cli_commands.empty)
+        console.add_command("rabbitmq-delete-queue-bind-all", cli_commands.empty)
+        console.add_command("rabbitmq-delete-exchange", cli_commands.empty)
+        console.add_command("rabbitmq-delete-exchange-all", cli_commands.empty)
+        
+        
+        
+        # 분산 처리 동작 클라이언트간 협업 (파티) 관련 명령어
+        console.add_command("guild-info", cli_commands.empty)           # 모든 파티의 정보 보기
+        console.add_command("party-make", cli_commands.empty)           # 파티 만들기
+        console.add_command("party-join", cli_commands.empty)           # 파티에 참여하기
+        console.add_command("party-info", cli_commands.empty)           # 파티 정보 보기
+        console.add_command("party-coop-change", cli_commands.empty)    # 파티가 실행되는데 기준이 되는 방식
+        console.add_command("party-assign-root", cli_commands.empty)    # 파티에 속한 기기에 루트 추가하기
+        console.add_command("party-marge", cli_commands.empty)          # 파티 2개를 1개로 합치기 (우측 기준 좌측으로 병합)
+        
+        
+        # 버전 출력
+        console.add_command("version", cli_commands.empty)
+        
+        # 입장 환영 메시지
+        console.add_command("welcome", cli_commands.empty)
+
+        # 업데이트 (대충 git page로 출력해서 비교하면 되는거 아님? ㅋㅋ)
+        # console.add_command("version-update-check", cli_commands.empty)
+        # console.add_command("version-update-letgo", cli_commands.empty)
+        
+        
         
         # 콘솧 프로그램 실행 
         console.start()

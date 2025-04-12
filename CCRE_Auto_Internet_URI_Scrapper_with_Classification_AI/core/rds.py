@@ -83,6 +83,12 @@ def table_init(engine: Engine, db: Session, db_type: DatabaseType):
     if not _chk_rds_table_exists(db, db_type, "robots"):
         Robots.metadata.create_all(engine)    
         
+    if not _chk_rds_table_exists(db, db_type, "leave_classes"):
+        LeavesClass.metadata.create_all(engine)    
+        
+    if not _chk_rds_table_exists(db, db_type, "classes"):
+        Classes.metadata.create_all(engine)    
+        
         
 def update_roots(db: Session, roots: list[Scrapper_Root]):
     """
@@ -101,7 +107,7 @@ def update_roots(db: Session, roots: list[Scrapper_Root]):
                     existing_root.rules = root.access_rule.to_json()
                 else:
                     # 새로운 root 추가
-                    new_root = Roots(root_key=root.root_key, root_uri=root.root_uri, rules=root.access_rule.to_json())
+                    new_root = Roots(id=None, root_key=root.root_key, root_uri=root.root_uri, rules=root.access_rule.to_json())
                     db.add(new_root)
     except SQLAlchemyError as e:
         print(f"SQLAlchemyError occurred: {str(e)}")

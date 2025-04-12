@@ -2,6 +2,7 @@ import threading
 import time
 from .thread_worker import WorkerThread
 from .thread_watcher import WatcherThread
+import psutil
 
 
 class ThreadManager:
@@ -52,3 +53,29 @@ class ThreadManager:
     def get_active_watcher_count(self):
         """현재 활성화된 감시자 쓰레드 수를 반환하는 메서드"""
         return 1 if self.watcher_thread and self.watcher_thread.is_alive() else 0
+    
+    def get_worker_threads_memory_usage(self):
+        """Returns total memory usage of all worker threads in bytes
+        
+        Returns:
+            int: Total memory usage in bytes
+        """
+        try:
+            process = psutil.Process()
+            total_memory = process.memory_info().rss  # Memory in bytes
+            
+            # Count active threads
+            active_workers = [worker for worker in self.worker_threads if worker.is_alive()]
+            active_count = len(active_workers)
+            
+            if active_count == 0:
+                return 0
+            
+            # Calculate approximate memory used by worker threads
+            worker_threads_memory = int(total_memory * (active_count / (active_count + (1 if self.watcher_thread and self.watcher_thread.is_alive() else 0))))
+            
+            return worker_threads_memory
+        except ImportError:
+            print("psutil library not installed. Install it using 'pip install psutil' for memory tracking.")
+            return 0
+    

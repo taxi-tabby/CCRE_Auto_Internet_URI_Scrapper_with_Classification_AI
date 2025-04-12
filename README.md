@@ -37,6 +37,7 @@ root라는 단위는 시작점을 기리키는 uri이고 해당 기준으로 설
 - yara, maltrail (ANTI VIRUS 1) (아직 안썼음)
 - pyclamd (ANTI VIRUS 2) (아직 안썼음)
 - psycopg2 (postgresql)
+- psutil (etc)
 
 ### tools
 - rabbitMQ

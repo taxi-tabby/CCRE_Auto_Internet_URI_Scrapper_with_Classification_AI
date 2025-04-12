@@ -1,4 +1,3 @@
-
 from datetime import datetime
 from typing import List
 from typing import Optional
@@ -23,6 +22,9 @@ class Robots(Base):
     
     # 고유번호
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True, type_=BigInteger)
+    
+    # 루트 id (외래 키 추가)
+    # root_id: Mapped[Optional[int]] = mapped_column(ForeignKey("roots.id"), nullable=True, type_=BigInteger)
     
     # 루트 uri
     base_domain: Mapped[str] = mapped_column(type_=String(255), nullable=False)

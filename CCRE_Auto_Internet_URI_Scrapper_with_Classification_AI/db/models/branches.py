@@ -6,7 +6,6 @@ from sqlalchemy import String
 from sqlalchemy.orm import DeclarativeBase, declarative_base
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
-from sqlalchemy.orm import relationship
 
 from .base import Base
 
@@ -28,7 +27,6 @@ class Branches(Base):
     # 루트 id
     root_id: Mapped[int] = mapped_column(ForeignKey("roots.id"), nullable=False, type_=BigInteger)
     
-    
     # 브랜치에서 검색할 uri
     branch_uri: Mapped[str] = mapped_column(type_=Text, nullable=False)
     
@@ -38,13 +36,12 @@ class Branches(Base):
     # 추가된 일자
     created_at: Mapped[datetime] = mapped_column(type_=DateTime, server_default=text("CURRENT_TIMESTAMP"), nullable=False)  
     
-    
     # 인덱스 설정
     __table_args__ = (
         Index('idx_branches_default', 'root_id', 'id'),
         Index('idx_branches_uri', 'branch_uri'),
         Index('idx_branches_root_id', 'root_id'),
-        Index('idx_branches_parent_id', 'root_id', 'parnet_id'),
+        Index('idx_branches_parent_id', 'root_id', 'parent_id'),
     )
     
     
