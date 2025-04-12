@@ -1,6 +1,6 @@
 from sqlalchemy.orm import relationship
 
-from .root import Roots
+from .roots import Roots
 from .branches import Branches
 from .leaves import Leaves
 from .robots import Robots

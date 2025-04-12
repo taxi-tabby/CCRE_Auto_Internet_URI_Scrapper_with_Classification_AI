@@ -7,6 +7,7 @@ from sqlalchemy.orm import DeclarativeBase, declarative_base
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import relationship
+from sqlalchemy.dialects.sqlite import INTEGER as SQLiteInteger
 
 from .base import Base
 
@@ -22,7 +23,11 @@ class Classes(Base):
     __tablename__ = "classes"
     
     # 고유번호
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True, type_=BigInteger)
+    id: Mapped[int] = mapped_column(
+        BigInteger().with_variant(SQLiteInteger, "sqlite"), 
+        primary_key=True, 
+        autoincrement=True
+    )
     
     # 루트 uri
     class_code: Mapped[str] = mapped_column(type_=String(50), nullable=False)

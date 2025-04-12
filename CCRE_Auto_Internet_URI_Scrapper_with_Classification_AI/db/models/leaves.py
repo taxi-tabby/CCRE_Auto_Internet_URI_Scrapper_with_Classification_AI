@@ -7,7 +7,7 @@ from sqlalchemy.orm import DeclarativeBase, declarative_base
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import relationship
-
+from sqlalchemy.dialects.sqlite import INTEGER as SQLiteInteger
 
 from .base import Base
 
@@ -20,7 +20,11 @@ class Leaves(Base):
     __tablename__ = "leaves"
     
     # 고유번호
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True, type_=BigInteger)
+    id: Mapped[int] = mapped_column(
+        BigInteger().with_variant(SQLiteInteger, "sqlite"), 
+        primary_key=True, 
+        autoincrement=True
+    )
     
     # 루트 id
     root_id: Mapped[int] = mapped_column(ForeignKey("roots.id"), nullable=False, type_=BigInteger)

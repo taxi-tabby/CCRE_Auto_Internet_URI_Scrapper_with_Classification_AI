@@ -6,6 +6,7 @@ from sqlalchemy import String
 from sqlalchemy.orm import DeclarativeBase, declarative_base
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
+from sqlalchemy.dialects.sqlite import INTEGER as SQLiteInteger
 
 from .base import Base
 
@@ -18,7 +19,11 @@ class Branches(Base):
     __tablename__ = "branches"
     
     # 고유번호
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True, type_=BigInteger)
+    id: Mapped[int] = mapped_column(
+        BigInteger().with_variant(SQLiteInteger, "sqlite"), 
+        primary_key=True, 
+        autoincrement=True
+    )
     
     # 부모 브랜치 id
     parent_id: Mapped[Optional[int]] = mapped_column(ForeignKey("branches.id"), nullable=True, type_=BigInteger)

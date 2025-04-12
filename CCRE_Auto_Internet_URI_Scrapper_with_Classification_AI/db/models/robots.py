@@ -7,7 +7,7 @@ from sqlalchemy.orm import DeclarativeBase, declarative_base
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import relationship
-
+from sqlalchemy.dialects.sqlite import INTEGER as SQLiteInteger
 from .base import Base
 
 class Robots(Base):
@@ -21,7 +21,12 @@ class Robots(Base):
     __tablename__ = "robots"
     
     # 고유번호
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True, type_=BigInteger)
+    # id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True, type_=BigInteger)
+    id: Mapped[int] = mapped_column(
+        BigInteger().with_variant(SQLiteInteger, "sqlite"), 
+        primary_key=True, 
+        autoincrement=True
+    )
     
     # 루트 id (외래 키 추가)
     # root_id: Mapped[Optional[int]] = mapped_column(ForeignKey("roots.id"), nullable=True, type_=BigInteger)

@@ -107,7 +107,7 @@ def update_roots(db: Session, roots: list[Scrapper_Root]):
                     existing_root.rules = root.access_rule.to_json()
                 else:
                     # 새로운 root 추가
-                    new_root = Roots(id=None, root_key=root.root_key, root_uri=root.root_uri, rules=root.access_rule.to_json())
+                    new_root = Roots(root_key=root.root_key, root_uri=root.root_uri, rules=root.access_rule.to_json())
                     db.add(new_root)
     except SQLAlchemyError as e:
         print(f"SQLAlchemyError occurred: {str(e)}")
