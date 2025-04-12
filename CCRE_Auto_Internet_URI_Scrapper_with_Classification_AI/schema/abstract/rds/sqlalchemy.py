@@ -29,6 +29,11 @@ class CCRE_AI_Scrapper_RDS_Connection_SQLAlchemy(ABC):
     """
 
     @property
+    def connection_id(self):
+        """이 연결의 고유 ID를 반환합니다."""
+        pass
+
+    @property
     @abstractmethod
     def connection(self):
         pass

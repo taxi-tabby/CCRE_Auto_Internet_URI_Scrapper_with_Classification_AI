@@ -11,7 +11,8 @@ from datetime import datetime, timedelta
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.cli_command import CLICommand
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.console import CommandHandler
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.predef import CUSTOM_HEADER, GLOBAL_TIMEZONE, MAX_DIRECT_HTTP, USER_AGENT_NAME
-from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.rds import get_branch_id_if_exists, get_robots_by_domain, get_root_branch_count, increment_branch_duplicated_count, table_init, get_roots_list, update_branches, update_leaves, update_robot, update_roots
+import CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.rds as rds
+import CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.local as local_rds
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.util import thlog
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.crawing import fetch_with_redirects, socket_fetch_with_redirects
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.mime import get_mime_type_from_binary
@@ -22,6 +23,7 @@ from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.parser.uri im
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.parser.xml import  extract_links_from_xml
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.string import shorten_string
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.helper.stringify.json import stringify_to_json
+from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.abstract.rds.predef import DatabaseType
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.connection_info import Connection_Info
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.pika_rabbitmq import PikaRabbitMQ
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.scrapper_root import Scrapper_Root
@@ -177,7 +179,7 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
             ## robots.txt 체크
             robot_ok = False
             with db_session.get_db() as db:
-                robot = get_robots_by_domain(db, base_url)
+                robot = rds.get_robots_by_domain(db, base_url)
                 
                 
                 
@@ -203,7 +205,7 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
                     if isinstance(time_difference, timedelta) and time_difference > rules.robots_txt_expiration_time:
                         # print('로봇체크 캐시 업데이트 시작')
                         robot_ruleset = await fetch_robots_txt(uri)
-                        update_robot(db, base_url, robot_ruleset, GLOBAL_TIMEZONE)
+                        rds.update_robot(db, base_url, robot_ruleset, GLOBAL_TIMEZONE)
                         thlog(root.root_key, f"Cache robots.txt rule updated", time_difference, base_url)
                         # print('로봇체크 캐시 업데이트 종료')
                         
@@ -214,7 +216,7 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
                     
                 else:
                     robot_ruleset = await fetch_robots_txt(uri)
-                    update_robot(db, base_url, robot_ruleset, GLOBAL_TIMEZONE)
+                    rds.update_robot(db, base_url, robot_ruleset, GLOBAL_TIMEZONE)
                     robot_ok = check_robot_permission_from_rules(USER_AGENT_NAME, robot_ruleset, uri)
                     thlog(root.root_key, f"Live robots.txt rule check", base_url)
 
@@ -275,7 +277,7 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
     # 루트에 브렌치 데이터가 없으면 크롤링 요청
     flag_branch_no_exists = False 
     with db_session.get_db() as db:
-        cnt = get_root_branch_count(db, root.id)
+        cnt = rds.get_root_branch_count(db, root.id)
         if cnt == 0:
             flag_branch_no_exists = True
     
@@ -310,7 +312,7 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
         # 브랜치 등록 체크
         def dup_chk(root_id: int, uri: str) -> (int | None):
             with db_session.get_db() as db:
-                return get_branch_id_if_exists(db, root_id, uri)
+                return rds.get_branch_id_if_exists(db, root_id, uri)
 
 
         # 브렌치가 존재하면 브랜치 생성
@@ -321,7 +323,7 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
                 branch.parent_id = id
                 branch.root_id = root.id
                 branch.branch_uri = uri
-                ids = update_branches(db, branches=[branch])
+                ids = rds.update_branches(db, branches=[branch])
                 if ids:
                     return ids[0]
                 return None
@@ -365,7 +367,7 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
                         leaf.val_main_language = html_parser.extract_html_lang()
                     
                     
-                    ids = update_leaves(db, leaves=[leaf])
+                    ids = rds.update_leaves(db, leaves=[leaf])
                     if ids:
                         return ids[0]
                     return None
@@ -393,7 +395,7 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
                         asyncio.run(crawling_and_queuing(id, assembled_uri_with_path))
                         asyncio.run(leaf_up(id, assembled_uri_with_path))
                 else:
-                    increment_branch_duplicated_count(db, d1)
+                    rds.increment_branch_duplicated_count(db, d1)
                     
                 if d2 == None:
                     id = branch_up(parent_id, assembled_uri_no_path)
@@ -402,7 +404,7 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
                         asyncio.run(crawling_and_queuing(id, assembled_uri_no_path))
                         asyncio.run(leaf_up(id, assembled_uri_no_path))
                 else:
-                    increment_branch_duplicated_count(db, d2)
+                    rds.increment_branch_duplicated_count(db, d2)
             else:
                 # 절대경로
                 assembled_uri = obj['url']
@@ -417,7 +419,7 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
                         asyncio.run(crawling_and_queuing(id, assembled_uri))
                         asyncio.run(leaf_up(id, assembled_uri))
                 else:
-                    increment_branch_duplicated_count(db, dd)
+                    rds.increment_branch_duplicated_count(db, dd)
                         
                 
                 
@@ -473,22 +475,30 @@ def initialize(
     
     conn = SQLAlchemyConnection()
     conn.connection = db_rds_connection
-    print("db connection initialized")
-    
     
 
+    profile_connection = Connection_Info()
+    profile_connection.db_type = DatabaseType.SQLITE3
+    profile_connection.database = "_local_config.db"
+
+    local = SQLAlchemyConnection()
+    local.connection = profile_connection
+    
+    with local.get_db() as db1:
+        local_rds.table_init(local._engine, db1, profile_connection.db_type)
+    
     
     all_roots: list[Roots] = []
     
-    with conn.get_db() as db:
+    with conn.get_db() as db2:
         # rds db table init
-        table_init(conn._engine, db, db_rds_connection.db_type) # 테이블 생성
-        update_roots(db, roots) # root 정보 업데이트
+        rds.table_init(conn._engine, db2, db_rds_connection.db_type) # 테이블 생성
+        rds.update_roots(db2, roots) # root 정보 업데이트
 
         # 모든 root를 획득.
         page_n: int = 1
         while True:
-            new_roots = get_roots_list(db, page_n)
+            new_roots = rds.get_roots_list(db2, page_n)
             if not new_roots:
                 break
             all_roots.extend(new_roots)
@@ -533,7 +543,7 @@ def initialize(
     thread_manager.start_all()
     
     
-    cli_commands: CLICommand = CLICommand(all_roots, all_mq_session, conn)
+    cli_commands: CLICommand = CLICommand(console, all_roots, all_mq_session, conn, local)
 
     
     try:
@@ -580,20 +590,22 @@ def initialize(
         
         
         # 분산 처리 동작 클라이언트간 협업 (파티) 관련 명령어
-        console.add_command("guild-info", cli_commands.empty)           # 모든 파티의 정보 보기
-        console.add_command("party-make", cli_commands.empty)           # 파티 만들기
-        console.add_command("party-join", cli_commands.empty)           # 파티에 참여하기
-        console.add_command("party-info", cli_commands.empty)           # 파티 정보 보기
-        console.add_command("party-coop-change", cli_commands.empty)    # 파티가 실행되는데 기준이 되는 방식
-        console.add_command("party-assign-root", cli_commands.empty)    # 파티에 속한 기기에 루트 추가하기
-        console.add_command("party-marge", cli_commands.empty)          # 파티 2개를 1개로 합치기 (우측 기준 좌측으로 병합)
+        console.add_command("guild-stand-up", cli_commands.empty)                               # 길드 설립 (마스터 노드가 되기)
+        console.add_command("guild-info", cli_commands.empty)                                   # 모든 파티의 정보 보기 (마스터 노드의 자식 노드 그룹의 정보)
+        console.add_command("party-make", cli_commands.empty)                                   # 파티 만들기 (자식 노드 그룹 생성)
+        console.add_command("party-join", cli_commands.empty)                                   # 파티에 참여하기 (자식 노드 그룹 참여)
+        console.add_command("party-info", cli_commands.empty)                                   # 파티 정보 보기 (자식 노드 그룹의 정보)
+        console.add_command("party-coop-change", cli_commands.empty)                            # 파티가 실행되는데 기준이 되는 방식
+        console.add_command("party-assign-root", cli_commands.empty)                            # 파티에 속한 기기에 루트 추가하기
+        console.add_command("party-marge", cli_commands.empty)                                  # 파티 2개를 1개로 합치기 (우측 기준 좌측으로 병합)
+        console.add_command("party-alias-name-change", cli_commands.party_alias_name_change)    # 기기명 변경
         
         
         # 버전 출력
         console.add_command("version", cli_commands.empty)
         
         # 입장 환영 메시지
-        console.add_command("welcome", cli_commands.empty)
+        console.add_command("welcome", cli_commands.motd)
 
         # 업데이트 (대충 git page로 출력해서 비교하면 되는거 아님? ㅋㅋ)
         # console.add_command("version-update-check", cli_commands.empty)
@@ -602,7 +614,8 @@ def initialize(
         
         
         # 콘솧 프로그램 실행 
-        console.start()
+        console.start(lambda: console.execute_command('welcome'))
+        
         
     except KeyboardInterrupt:
         print("Exiting the program.")

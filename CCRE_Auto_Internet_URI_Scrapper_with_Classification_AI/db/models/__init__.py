@@ -6,6 +6,7 @@ from .leaves import Leaves
 from .robots import Robots
 from .classes import Classes
 from .leave_classes import LeavesClass
+from .local_profile import LocalProfile
 
 
 # ================================================================================================
@@ -68,4 +69,4 @@ LeavesClass.class_item = relationship("Classes", foreign_keys=[LeavesClass.class
 
 
 # 공개할 이름 정의
-__all__ = ["Roots", "Branches", "Leaves", "Robots", "Classes", "LeavesClass"]
+__all__ = ["Roots", "Branches", "Leaves", "Robots", "Classes", "LeavesClass", "LocalProfile"]
