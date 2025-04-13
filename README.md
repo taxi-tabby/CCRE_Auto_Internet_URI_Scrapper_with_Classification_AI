@@ -60,7 +60,45 @@ https://huggingface.co/
 
 ### devlog
 
-#### 2025.04.14
+
+#### 2025.04.14 (2)
+
+```console
+hello
+Connection 12c3d240-61b6-4aa7-a653-73afd200a3f9 initialized with DatabaseType.SQLITE3 database
+Connection 461c80fe-e8a7-4756-95e1-22908a7759fd initialized with DatabaseType.SQLITE3 database
+
+        ╔════════════════════════════════════════════════════════╗
+        ║                                                        ║
+        ║   CCRE Auto Internet URI Scrapper with Classification  ║
+        ║                                                        ║
+        ╚════════════════════════════════════════════════════════╝
+
+
+System: Windows 10
+Time: 2025-04-14 05:40:10
+
+[This client stat]
+GUILD_UNIQUE_ID: MasterNode
+GUILD_IS: 1
+GUILD_ADDRESS_OUTER_IP: ###.237.###.144
+GUILD_ADDRESS_INNER_IP: 192.168.0.10
+GUILD_ADDRESS_MAC: ##:1a:##:da:##:13
+GUILD_LAST_RG_AT: 2025-04-13 21:03:23
+GUILD_TOKEN: 4417b056e8e07a0ce4dfe2a794aa3dba03b5c67b7257822103ff526fe40701416a8b8199b68cbd340f5d709ecc7a982c64a1ea96808e66ef0834b8aa72622a10
+> guild-stand-up
+Master node initialized: 0.0.0.0 / open is True / address is 12345
+Master node started successfully.
+> exit
+클라이언트 처리 중 오류: [WinError 10038] 소켓 이외의 개체에 작업을 시도했습니다
+Master node stopped successfully.
+watcher thread signaled to stop
+Closing connection 12c3d240-61b6-4aa7-a653-73afd200a3f9
+Closing connection 461c80fe-e8a7-4756-95e1-22908a7759fd
+bye
+```
+
+#### 2025.04.14 (1)
 
 계속 욕심을 부리는데. 이거 점점 사이즈가 커진다.
 분산 처리 관리를 위한 마스터-슬레이브 서비스 매시를 구현해서

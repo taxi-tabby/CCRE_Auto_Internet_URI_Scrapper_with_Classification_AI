@@ -32,6 +32,8 @@ from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.thr
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.scrapper_root_access_rule import Scrapper_Root_Access_Rule
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.db.models import *
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.thread_worker import WorkerThread
+from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.udp_client import UDPClient
+from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.udp_server import UDPServer
 from .import_path import add_module_path
 
 
@@ -543,11 +545,45 @@ def initialize(
     thread_manager.start_all()
     
     
-    cli_commands: CLICommand = CLICommand(console, all_roots, all_mq_session, conn, local)
+    
+    ###=======================================
+    ### 기능 초기화
+    ###======================================= 
+    # 마스터노드용 서버 
+    # 동작은 cli에 의존함
+    service_mesh_master: UDPServer = UDPServer()
+    
+    # 슬레이브 노드용 서버
+    # (상동함)
+    service_mesh_slave: UDPClient = UDPClient('localhost', 12345)
+    
+    
+    ###=======================================
+    ### 메인쓰레드용 명령어 콘솔 프로그램
+    ### - 명령어를 명시적으로 생성자를 통해 등록함.
+    ### - 타입을 위해 dict 안 씀. 타입에 찌들어서 이런게 가끔 역겨움. 그냥 강제했으면 좋겠다
+    ###======================================= 
+    cli_commands: CLICommand = CLICommand( 
+                                            console, 
+                                            all_roots, 
+                                            all_mq_session, 
+                                            conn, local, 
+                                            service_mesh_master, 
+                                            service_mesh_slave, )
 
     
     try:
         
+
+
+        
+        
+        
+        
+        
+        ###=======================================
+        ### 명령어 등록
+        ###=======================================
         # 루트 추가/삭제/시작/중지/재시작/상태보기
         console.add_command("root-add", cli_commands.empty)                 # 루트 추가
         console.add_command("root-restart", cli_commands.empty)             # 루트 재시작
@@ -604,7 +640,7 @@ def initialize(
         
         
         # 분산 처리 동작 클라이언트간 협업 (파티) 관련 명령어
-        console.add_command("guild-stand-up", cli_commands.empty)                               # 길드 설립 (마스터 노드가 되기)
+        console.add_command("guild-stand-up", cli_commands.master_node_start)                               # 길드 설립 (마스터 노드가 되기)
         console.add_command("guild-info", cli_commands.empty)                                   # 모든 파티의 정보 보기 (마스터 노드의 자식 노드 그룹의 정보)
         console.add_command("guild-registration", cli_commands.guild_registration)              # 자신을 길드에 등록합니다
         console.add_command("guild-unique-change", cli_commands.guild_unique_change)            # 기기명 변경
@@ -626,27 +662,45 @@ def initialize(
         console.add_command("welcome", cli_commands.motd)
 
         # 업데이트 (대충 git page로 출력해서 비교하면 되는거 아님? ㅋㅋ)
+        # 문제는 저장장치의 스키마 구조를 어떻게 바꿀것이냐 인데 라이브러리 의존도 여기는 성가셔짐.
         # console.add_command("version-update-check", cli_commands.empty)
         # console.add_command("version-update-letgo", cli_commands.empty)
         
         
-        
-        # 콘솧 프로그램 실행 
+        ###=======================================
+        ### 메인스레드 콘솧 프로그램 실행 
         console.start(lambda: console.execute_command('welcome'))
-        
+        ###=======================================
         
     except KeyboardInterrupt:
         print("Exiting the program.")
     except Exception as e:
         print(f"An error occurred: {e}")
 
+
+    ###=======================================
+    ### 의도된 안정적인 종료 처리 (트리거는 메인스레드 종료에 의해 발생함)
+    ###=======================================
+
+
+    # 마스터 노드 있으면 종료
+    if service_mesh_master.is_running():
+        if service_mesh_master.stop():
+            print("Master node stopped successfully.")
+        else:
+            print("Failed to stop master node.")
+
+    # 모든 mq 연결에 종료를 시도함
     for mq_conn in all_mq_session:
         mq_conn.stop_consuming()
         
+    # 모든 쓰레드를 종료처리함
     thread_manager.stop_all()
+    
+    #모든 쓰레드가 종료될때까지 대기함
     thread_manager.join_all()
     
-    # rds db close
+    # rds db 를 닫음
     conn.close()
     local.close()
     

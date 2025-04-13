@@ -13,14 +13,26 @@ import hashlib
 
 import CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.rds as rds
 import CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.local as local_rds
+from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.udp_client import UDPClient
+from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.udp_server import UDPServer
 
 class CLICommand:
-    def __init__(self, console_handler: CommandHandler, roots: List['Roots'], mq_sessions: List['PikaRabbitMQ'], db_session: 'SQLAlchemyConnection', local_session: 'SQLAlchemyConnection'):
+    def __init__(self, 
+                 console_handler: CommandHandler, 
+                 roots: List['Roots'], 
+                 mq_sessions: List['PikaRabbitMQ'], 
+                 db_session: 'SQLAlchemyConnection', 
+                 local_session: 'SQLAlchemyConnection',
+                 master_socket: 'UDPServer',
+                 slave_socket: 'UDPClient'):
+        
         self.console_handler = console_handler
         self.roots = roots
         self.mq_sessions = mq_sessions
         self.db_session = db_session
         self.local_session = local_session
+        self.master_socket = master_socket
+        self.slave_socket = slave_socket
         
         # Constants for profile keys as dictionary
         self.PROFILE_KEYS = {
@@ -33,11 +45,65 @@ class CLICommand:
             'GUILD_TOKEN': 'guild_token',
         }
 
+
+
+
+
+
     def empty(self):
         """
         Not available command.
         """
         return
+    
+    
+    
+    
+    
+    def master_node_start(self):
+        """
+        Start the master node.
+        """
+        print = self.console_handler.print_formatted
+        
+        
+        def callback(data: str, _RetAddress: tuple[str, int]):
+            print(f"Received data: {data} from {_RetAddress}", 'info')
+        
+        def init_callback(success: bool, message: str, ip: str):
+            print(f"Master node initialized: {message} / open is {success} / address is {ip}", 'info')
+        
+        self.master_socket.set_callback(callback)
+        self.master_socket.set_init_callback(init_callback)
+
+
+        if self.master_socket.listen():
+            if not self.master_socket.is_running():
+                print('Master node not available.', 'error')
+            else:
+                print('Master node started successfully.', 'success')
+        else:
+            print('Failed to start master node.', 'error')
+    
+    
+    def master_node_stop(self):
+        """
+        Stop the master node.
+        """
+        print = self.console_handler.print_formatted
+        
+        if self.master_socket is None:
+            print('Master node not available.', 'error')
+            return
+        
+        if self.master_socket.stop():
+            print('Master node stopped successfully.', 'success')
+            self.master_socket = None
+        else:
+            print('Failed to stop master node.', 'error')
+    
+    
+    
     
     
     def motd(self):
@@ -73,6 +139,19 @@ class CLICommand:
             # Print all profile keys
             for key_name, key_value in self.PROFILE_KEYS.items():
                 print_profile(key_name, key_value)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     def guild_registration(self):
         """
@@ -163,6 +242,16 @@ class CLICommand:
             # Add display of token to the output
             (lambda r: print(f'Guild Token: {r}', 'success') if r is not None else None)(local_rds.get_latest_local_profile(db, key_token))
             
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     def guild_unique_change(self, name: str):
         """
