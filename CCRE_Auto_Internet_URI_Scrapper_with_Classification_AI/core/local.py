@@ -126,6 +126,9 @@ def get_latest_local_profile(db: Session, data_key: str) -> Optional[str]:
             LocalProfile.created_at.desc()
         ).first()
         
+        
+
+        
         return profile.data_value if profile else None
         
     except SQLAlchemyError as e:
@@ -134,6 +137,11 @@ def get_latest_local_profile(db: Session, data_key: str) -> Optional[str]:
     except Exception as e:
         print(f"Error occurred: {e}")
         return None
+    
+    finally:
+        if db.in_transaction():
+            db.commit() 
+    
 
 
 

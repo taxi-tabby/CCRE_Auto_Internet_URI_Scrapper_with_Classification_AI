@@ -259,4 +259,4 @@ class CommandHandler:
             else:
                 desc = self.commands_desc.get(cmd, "No description available")
                 
-            self.print_formatted(f"  <ansiblue>{cmd}</ansiblue>: {desc}")
+            self.print_formatted(f"\t<ansiblue>{cmd}</ansiblue>: {desc}")

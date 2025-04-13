@@ -63,6 +63,10 @@ def _chk_rds_table_exists(db: Session, db_type: DatabaseType, table_name: str) -
         print(f"Error occurred: {e}")
         return False
     
+    finally:
+        if db.in_transaction():
+            db.commit()  
+    
     
 def table_init(engine: Engine, db: Session, db_type: DatabaseType):
     """
@@ -122,29 +126,39 @@ def update_roots(db: Session, roots: list[Scrapper_Root]):
             db.rollback()
             
 
+
 def get_roots_list(db: Session, page: int = 1, block: int = 10) -> list[Roots]:
     """
     루트 목록을 얻음 (기본 페이징 형식)
     Continuously request 기법을 통해 전체 목록을 가져올 수고 있고
     block 을 매우 높게 하여 한번에 얻을 수도 있음.
     """
-    return db.query(Roots).offset((page - 1) * block).limit(block).all()
-
+    try:
+        return db.query(Roots).offset((page - 1) * block).limit(block).all()
+    finally:
+        if db.in_transaction():
+            db.commit()
 
 
 def get_root_branch_count(db: Session, root_id: int) -> int:
     """
     루트에 연결된 브랜치 수를 반환
     """
-    return db.query(Branches).filter_by(root_id = root_id).count()
-        
+    try:
+        return db.query(Branches).filter_by(root_id = root_id).count()
+    finally:
+        if db.in_transaction():
+            db.commit()
         
 def get_exists_branch(db: Session, root_id: int, branch_uri: str) -> bool:
     """
     루트에 해당하는 브랜치가 존재하는지 확인
     """
-    return db.query(Branches).filter_by(root_id=root_id, branch_uri=branch_uri).first() is not None
-
+    try:
+        return db.query(Branches).filter_by(root_id=root_id, branch_uri=branch_uri).first() is not None
+    finally:
+        if db.in_transaction():
+            db.commit()
 
 
 def get_branch_id_if_exists(db: Session, root_id: int, branch_uri: str) -> int | None:
@@ -152,8 +166,12 @@ def get_branch_id_if_exists(db: Session, root_id: int, branch_uri: str) -> int |
     루트에 해당하는 브랜치가 존재하면 branch의 id를 반환하고,
     존재하지 않으면 None을 반환
     """
-    branch = db.query(Branches).filter_by(root_id=root_id, branch_uri=branch_uri).first()
-    return branch.id if branch else None
+    try:
+        branch = db.query(Branches).filter_by(root_id=root_id, branch_uri=branch_uri).first()
+        return branch.id if branch else None
+    finally:
+        if db.in_transaction():
+            db.commit()
 
 
 def increment_branch_duplicated_count(db: Session, branch_id: int):

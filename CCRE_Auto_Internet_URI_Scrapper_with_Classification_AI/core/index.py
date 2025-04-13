@@ -575,30 +575,48 @@ def initialize(
         console.add_command("api-server-status", cli_commands.empty)            # api 서버 상태 보기
         console.add_command("api-server-port-change", cli_commands.empty)       # api 서버 포트 변경
         
-        # rabbitmq 관련 명령어
-        console.add_command("rabbitmq-queue-sampling", cli_commands.empty)       # 큐 데이터 추출해서 보기
-        console.add_command("rabbitmq-queue-purge", cli_commands.empty)          # 큐 데이터 날리기
-        console.add_command("rabbitmq-queue-purge-all", cli_commands.empty)      # 모든 큐 데이터 날리기
+        console.add_command("dashboard-start", cli_commands.empty)    # dashboard start
+        console.add_command("dashboard-stop", cli_commands.empty)     # dashboard stop
+        console.add_command("dashboard-status", cli_commands.empty)   # dashboard status
+        console.add_command("dashboard-port-change", cli_commands.empty) # dashboard server port change
         
-        console.add_command("rabbitmq-delete-queue", cli_commands.empty)
-        console.add_command("rabbitmq-delete-queue-all", cli_commands.empty)
-        console.add_command("rabbitmq-delete-queue-bind", cli_commands.empty)
-        console.add_command("rabbitmq-delete-queue-bind-all", cli_commands.empty)
-        console.add_command("rabbitmq-delete-exchange", cli_commands.empty)
-        console.add_command("rabbitmq-delete-exchange-all", cli_commands.empty)
+        
+        # rabbitmq 관련 명령어
+        console.add_command("rq-sampling", cli_commands.empty)       # 큐 데이터 추출해서 보기
+        console.add_command("rq-purge", cli_commands.empty)          # 큐 데이터 날리기
+        console.add_command("rq-purge-all", cli_commands.empty)      # 모든 큐 데이터 날리기
+        console.add_command("rq-delete-queue", cli_commands.empty)
+        console.add_command("rq-delete-queue-all", cli_commands.empty)
+        console.add_command("rq-delete-queue-bind", cli_commands.empty)
+        console.add_command("rq-delete-queue-bind-all", cli_commands.empty)
+        console.add_command("rq-delete-exchange", cli_commands.empty)
+        console.add_command("rq-delete-exchange-all", cli_commands.empty)
+        console.add_command("rq-show-queue-count", cli_commands.empty)
+        console.add_command("rq-show-queue-count-all", cli_commands.empty)
+        
+        
+        
+        
+        # 소스코드로 입력된 데이터를 조회하는 것
+        console.add_command("source-get-roots", cli_commands.empty)         # 소스코드로 입력된 루트 정보를 보기
+        console.add_command("source-get-ai-module", cli_commands.empty)     # 소스코드로 입력된 모듈 정보를 보기
         
         
         
         # 분산 처리 동작 클라이언트간 협업 (파티) 관련 명령어
         console.add_command("guild-stand-up", cli_commands.empty)                               # 길드 설립 (마스터 노드가 되기)
         console.add_command("guild-info", cli_commands.empty)                                   # 모든 파티의 정보 보기 (마스터 노드의 자식 노드 그룹의 정보)
+        console.add_command("guild-registration", cli_commands.guild_registration)              # 자신을 길드에 등록합니다
+        console.add_command("guild-unique-change", cli_commands.guild_unique_change)            # 기기명 변경
         console.add_command("party-make", cli_commands.empty)                                   # 파티 만들기 (자식 노드 그룹 생성)
         console.add_command("party-join", cli_commands.empty)                                   # 파티에 참여하기 (자식 노드 그룹 참여)
         console.add_command("party-info", cli_commands.empty)                                   # 파티 정보 보기 (자식 노드 그룹의 정보)
         console.add_command("party-coop-change", cli_commands.empty)                            # 파티가 실행되는데 기준이 되는 방식
         console.add_command("party-assign-root", cli_commands.empty)                            # 파티에 속한 기기에 루트 추가하기
         console.add_command("party-marge", cli_commands.empty)                                  # 파티 2개를 1개로 합치기 (우측 기준 좌측으로 병합)
-        console.add_command("party-alias-name-change", cli_commands.party_alias_name_change)    # 기기명 변경
+
+
+        
         
         
         # 버전 출력
@@ -630,6 +648,7 @@ def initialize(
     
     # rds db close
     conn.close()
+    local.close()
     
     # bye bye
     print("bye")
