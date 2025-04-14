@@ -563,8 +563,7 @@ def initialize(
     ### - 명령어를 명시적으로 생성자를 통해 등록함.
     ### - 타입을 위해 dict 안 씀. 타입에 찌들어서 이런게 가끔 역겨움. 그냥 강제했으면 좋겠다
     ###======================================= 
-    cli_commands: CLICommand = CLICommand( 
-                                            console, 
+    cli_commands: CLICommand = CLICommand(  console, 
                                             all_roots, 
                                             all_mq_session, 
                                             conn, local, 
@@ -573,13 +572,6 @@ def initialize(
 
     
     try:
-        
-
-
-        
-        
-        
-        
         
         ###=======================================
         ### 명령어 등록

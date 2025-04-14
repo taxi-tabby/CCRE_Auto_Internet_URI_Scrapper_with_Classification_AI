@@ -38,6 +38,7 @@ root라는 단위는 시작점을 기리키는 uri이고 해당 기준으로 설
 - pyclamd (ANTI VIRUS 2) (아직 안썼음)
 - psycopg2 (postgresql)
 - psutil (etc)
+- alembic (rds migrate)
 
 ### tools
 - rabbitMQ
@@ -97,6 +98,11 @@ Closing connection 12c3d240-61b6-4aa7-a653-73afd200a3f9
 Closing connection 461c80fe-e8a7-4756-95e1-22908a7759fd
 bye
 ```
+
+#### 2025.04.15 (1)
+
+alembic 결국 쓰기로 했음. 컬럼 바뀌는데 하나하나 다 맞춰주기 힘들어서 앞으론 이걸로 편할듯
+
 
 #### 2025.04.14 (1)
 

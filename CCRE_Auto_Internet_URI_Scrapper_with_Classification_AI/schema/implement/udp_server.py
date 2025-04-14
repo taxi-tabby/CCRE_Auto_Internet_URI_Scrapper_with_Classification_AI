@@ -51,25 +51,51 @@ class UDPServer:
         """클라이언트의 요청을 처리하는 함수"""
         while self.running:
             try:
-                data, client_address = self.server_socket.recvfrom(1024)
-                client_ip = client_address[0]
+                # 소켓이 유효한지 확인
+                if not self.server_socket:
+                    print("소켓이 닫혔습니다. 클라이언트 핸들러를 종료합니다.")
+                    break
+                    
+                # 소켓에 타임아웃 설정
+                self.server_socket.settimeout(0.5)  # 0.5초 타임아웃
+                
+                try:
+                    data, client_address = self.server_socket.recvfrom(1024)
+                    client_ip = client_address[0]
 
-                # 화이트리스트 검사
-                if self.whitelist and client_ip not in self.whitelist:
-                    print(f"허용되지 않은 IP: {client_ip}에서 접근을 차단했습니다.")
+                    # 화이트리스트 검사
+                    if self.whitelist and client_ip not in self.whitelist:
+                        print(f"허용되지 않은 IP: {client_ip}에서 접근을 차단했습니다.")
+                        continue
+
+                    print(f"받은 데이터: {data.decode()} from {client_ip}")
+
+                    # 콜백이 설정되어 있으면 콜백으로 처리
+                    if self.callback:
+                        self.callback(self.server_socket, data.decode(), client_address)
+                    else:
+                        # 기본 응답 (콜백이 없을 경우)
+                        response = "There is no callback function."
+                        self.server_socket.sendto(response.encode(), client_address)
+                        
+                except socket.timeout:
+                    # 타임아웃은 오류가 아니므로 계속 실행
                     continue
-
-                print(f"받은 데이터: {data.decode()} from {client_ip}")
-
-                # 콜백이 설정되어 있으면 콜백으로 처리
-                if self.callback:
-                    self.callback(self.server_socket, data.decode(), client_address, )
-                else:
-                    # 기본 응답 (콜백이 없을 경우)
-                    response = "Hello, UDP client!"
-                    self.server_socket.sendto(response.encode(), client_address)
+                except socket.error as e:
+                    # 소켓 오류 처리
+                    if not self.running:
+                        # 이미 서버 종료 중이면 종료
+                        print("UDP Socket server handler says: Server is shutting down.")
+                        break
+                    
+                    print(f"UDPServer socket err: {e}")
+                    break
+                    
             except Exception as e:
-                print(f"클라이언트 처리 중 오류: {e}")
+                if not self.running:
+                    # 서버가 정상적으로 종료 중이면 오류 메시지 출력하지 않음
+                    break
+                print(f"UDPServer client process err: {e}")
                 break
 
     def listen(self):
@@ -97,16 +123,40 @@ class UDPServer:
     def stop(self):
         """서버를 종료하고 스레드를 안전하게 종료합니다."""
         with self.lock:
-            if self.running:
-                self.running = False
-                if self.server_socket:
-                    self.server_socket.close()  # 소켓 종료
-                if self.server_thread:
-                    self.server_thread.join()  # 스레드 종료
-                return True
-            else:
+            if not self.running:
                 return False
+                
+            # 상태 먼저 업데이트
+            self.running = False
             
+            # 소켓 안전하게 닫기
+            if self.server_socket:
+                try:
+                    # Windows에서는 바인딩된 소켓을 닫기 전에 shutdown이 필요할 수 있음
+                    self.server_socket.shutdown(socket.SHUT_RDWR)
+                except (socket.error, OSError):
+                    # 이미 닫혔거나 오류 상태일 수 있음
+                    pass
+                    
+                try:
+                    self.server_socket.close()
+                except (socket.error, OSError):
+                    pass
+                    
+                self.server_socket = None
+                
+            # 스레드 안전하게 종료
+            if self.server_thread and self.server_thread.is_alive():
+                # 짧은 대기 시간으로 시도
+                self.server_thread.join(timeout=2.0)
+                
+                # 스레드가 여전히 실행 중인지 확인
+                if self.server_thread.is_alive():
+                    print("경고: 서버 스레드를 정상적으로 종료할 수 없습니다.")
+                    # 여기서 더 강력한 종료 방법을 사용할 수 있지만 권장되지 않음
+                
+            return True
+                
             
     def is_running(self) -> bool:
         """서버가 실행 중인지 확인합니다."""

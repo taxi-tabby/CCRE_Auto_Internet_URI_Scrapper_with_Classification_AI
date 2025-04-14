@@ -371,3 +371,6 @@ def get_robots_by_domain(db: Session, base_domain: str):
     finally:
         # Close session after handling the transaction and exceptions
         db.close()
+
+
+
