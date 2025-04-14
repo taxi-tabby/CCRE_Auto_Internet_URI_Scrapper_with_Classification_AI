@@ -1,7 +1,8 @@
-from typing import List, Union
+from typing import Callable, List, Optional, Union
 import requests
 
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.console import CommandHandler
+from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.migrate import RunMigrationsProtocol
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.db.models.roots import Roots
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.pika_rabbitmq import PikaRabbitMQ
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.sqlalchemy import SQLAlchemyConnection
@@ -15,7 +16,6 @@ import CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.rds as rds
 import CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.local as local_rds
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.udp_client import UDPClient
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.schema.implement.udp_server import UDPServer
-
 class CLICommand:
     def __init__(self, 
                  console_handler: CommandHandler, 
@@ -24,7 +24,8 @@ class CLICommand:
                  db_session: 'SQLAlchemyConnection', 
                  local_session: 'SQLAlchemyConnection',
                  master_socket: 'UDPServer',
-                 slave_socket: 'UDPClient'):
+                 slave_socket: 'UDPClient',
+                 run_migrations: RunMigrationsProtocol):
         
         self.console_handler = console_handler
         self.roots = roots
@@ -33,6 +34,7 @@ class CLICommand:
         self.local_session = local_session
         self.master_socket = master_socket
         self.slave_socket = slave_socket
+        self.run_migrations = run_migrations
         
         # Constants for profile keys as dictionary
         self.PROFILE_KEYS = {
@@ -57,7 +59,25 @@ class CLICommand:
         return
     
     
-    
+    def dev__migrate(self, db_type: str, action: str, message: Optional[str] = None, revision: Optional[str] = None):
+        """
+        [DEV] Run the migration command.
+        """
+        print = self.console_handler.print_formatted
+        
+        if db_type not in ['main', 'local']:
+            print(f"Unknown database type: {db_type}", 'error')
+            return
+        
+        if action not in ['upgrade', 'revision', 'downgrade']:
+            print(f"Unknown action: {action}", 'error')
+            return
+        
+        # Run the migration
+        self.run_migrations(db_type, self.db_session.engine.url, action, message, revision)
+        
+        # Print success message
+        print(f"Migration {action} for {db_type} database completed successfully.", 'success')
     
     
     def master_node_start(self):

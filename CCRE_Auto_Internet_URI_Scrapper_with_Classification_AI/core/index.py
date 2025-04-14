@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.cli_command import CLICommand
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.console import CommandHandler
+from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.migrate import init_migrations, run_migrations
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.predef import CUSTOM_HEADER, GLOBAL_TIMEZONE, MAX_DIRECT_HTTP, USER_AGENT_NAME
 import CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.rds as rds
 import CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.local as local_rds
@@ -544,6 +545,16 @@ def initialize(
     # 하위 쓰레드 실행
     thread_manager.start_all()
     
+    ###=======================================
+    ### db 마이그레이션
+    ###======================================= 
+    # _build_connection_url() 메소드를 사용해 마이그레이션 한다.
+    init_migrations("main", conn._build_connection_url())
+    init_migrations("local", local._build_connection_url())
+    
+    run_migrations("main", conn._build_connection_url(), 'upgrade')
+    run_migrations("local", local._build_connection_url(), 'upgrade')
+    
     
     
     ###=======================================
@@ -568,7 +579,8 @@ def initialize(
                                             all_mq_session, 
                                             conn, local, 
                                             service_mesh_master, 
-                                            service_mesh_slave, )
+                                            service_mesh_slave, 
+                                            run_migrations )
 
     
     try:
@@ -652,6 +664,9 @@ def initialize(
         
         # 입장 환영 메시지
         console.add_command("welcome", cli_commands.motd)
+        
+        # 개발용
+        console.add_command("@dev-migrate", cli_commands.dev__migrate) # 마이그레이션 테스트용
 
         # 업데이트 (대충 git page로 출력해서 비교하면 되는거 아님? ㅋㅋ)
         # 문제는 저장장치의 스키마 구조를 어떻게 바꿀것이냐 인데 라이브러리 의존도 여기는 성가셔짐.
