@@ -79,6 +79,24 @@ class CLICommand:
         # Print success message
         print(f"Migration {action} for {db_type} database completed successfully.", 'success')
     
+    def dev__master_node_stop(self):
+        """
+        [DEV] Stop the master node.
+        """
+        print = self.console_handler.print_formatted
+        
+        if self.master_socket is None:
+            print('Master node not available.', 'error')
+            return
+        
+        if self.master_socket.stop():
+            print('Master node stopped successfully.', 'success')
+            self.master_socket = None
+        else:
+            print('Failed to stop master node.', 'error')
+    
+    
+    
     
     def master_node_start(self):
         """

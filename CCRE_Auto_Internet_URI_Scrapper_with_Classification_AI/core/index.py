@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.cli_command import CLICommand
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.console import CommandHandler
-from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.migrate import init_migrations, run_migrations
+from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.migrate import run_migrations
 from CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.predef import CUSTOM_HEADER, GLOBAL_TIMEZONE, MAX_DIRECT_HTTP, USER_AGENT_NAME
 import CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.rds as rds
 import CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI.core.local as local_rds
@@ -456,10 +456,6 @@ def _worker_start_ingot(root: Roots, db_session: SQLAlchemyConnection, mq_sessio
 
 
 
-
-
-
-
 def initialize(
     db_rds_connection: Connection_Info, # db storage connection info
     db_mq_connection: Connection_Info, # db storage connection info
@@ -487,21 +483,28 @@ def initialize(
     local = SQLAlchemyConnection()
     local.connection = profile_connection
     
-    with local.get_db() as db1:
-        local_rds.table_init(local._engine, db1, profile_connection.db_type)
+    
+
+    
+    # 로컬 데이터에 접근
+    with local.get_db() as db:
+        local_rds.table_init(local._engine, db, profile_connection.db_type)
+
     
     
+    # 공용 데이터에 접근
     all_roots: list[Roots] = []
-    
-    with conn.get_db() as db2:
+    with conn.get_db() as db:
         # rds db table init
-        rds.table_init(conn._engine, db2, db_rds_connection.db_type) # 테이블 생성
-        rds.update_roots(db2, roots) # root 정보 업데이트
+        rds.table_init(conn._engine, db, db_rds_connection.db_type) # 테이블 생성
+        rds.update_roots(db, roots) # root 정보 업데이트
+
+
 
         # 모든 root를 획득.
         page_n: int = 1
         while True:
-            new_roots = rds.get_roots_list(db2, page_n)
+            new_roots = rds.get_roots_list(db, page_n)
             if not new_roots:
                 break
             all_roots.extend(new_roots)
@@ -549,12 +552,30 @@ def initialize(
     ### db 마이그레이션
     ###======================================= 
     # _build_connection_url() 메소드를 사용해 마이그레이션 한다.
-    init_migrations("main", conn._build_connection_url())
-    init_migrations("local", local._build_connection_url())
+    # initialize_branch("main", conn._build_connection_url())
+    # initialize_branch("local", local._build_connection_url())
     
-    run_migrations("main", conn._build_connection_url(), 'upgrade')
-    run_migrations("local", local._build_connection_url(), 'upgrade')
+    # conn_url = conn._build_connection_url()
+    # local_url = local._build_connection_url()
     
+    # if has_no_migrations("main", conn_url):
+    #     run_migrations("main", conn_url, 'revision')
+    #     print("----------1")
+        
+    # if has_no_migrations("local", local_url):
+    #     run_migrations("local", local_url, 'revision')
+    #     print("----------2")
+    
+    # if is_up_to_date("main", conn_url):
+    #     run_migrations("main", conn_url, 'upgrade')
+    #     print("----------3")
+    
+    # if is_up_to_date("local", conn_url): 
+    #     run_migrations("local", local_url, 'upgrade')
+    #     print("----------4")
+    
+    # run_migrations("main", conn_url, 'upgrade', version_url=local_url)
+    # run_migrations("local", local_url, 'upgrade', version_url=local_url)
     
     
     ###=======================================
@@ -582,6 +603,53 @@ def initialize(
                                             service_mesh_slave, 
                                             run_migrations )
 
+    data_local_guild_is = False
+    data_local_unique_id = ''
+    data_local_guild_token = ''
+    data_local_address_outer_ip = ''
+    data_local_address_inner_ip = ''
+    data_local_address_mac = ''
+    
+    with local.get_db() as db:
+        _guild_value = local_rds.get_latest_local_profile(db, cli_commands.PROFILE_KEYS['GUILD_IS'])
+        data_local_guild_is = True if _guild_value is not None and _guild_value == '1' else False
+        
+        _guild_unique_id = local_rds.get_latest_local_profile(db, cli_commands.PROFILE_KEYS['GUILD_UNIQUE_ID'])
+        data_local_unique_id = _guild_unique_id if _guild_unique_id is not None else ''
+        
+        _guild_token = local_rds.get_latest_local_profile(db, cli_commands.PROFILE_KEYS['GUILD_TOKEN'])
+        data_local_guild_token = _guild_token if _guild_token is not None else ''
+        
+        _outer_ip = local_rds.get_latest_local_profile(db, cli_commands.PROFILE_KEYS['GUILD_ADDRESS_OUTER_IP'])
+        data_local_address_outer_ip = _outer_ip if _outer_ip is not None else ''
+        
+        _inner_ip = local_rds.get_latest_local_profile(db, cli_commands.PROFILE_KEYS['GUILD_ADDRESS_INNER_IP'])
+        data_local_address_inner_ip = _inner_ip if _inner_ip is not None else ''
+        
+        _mac = local_rds.get_latest_local_profile(db, cli_commands.PROFILE_KEYS['GUILD_ADDRESS_MAC'])
+        data_local_address_mac = _mac if _mac is not None else ''
+        
+    
+        
+    with conn.get_db() as db:
+        discover = rds.get_service_discover_by_credentials(db, data_local_unique_id, data_local_guild_token)
+        if data_local_guild_is:
+            
+            cli_commands.master_node_start()
+            
+            # 없으면 공용 데이터베이스에 등록. 이후 슬레이브가 마스터를 최초 및 갱신 시 조회하기 위해 사용됨.
+            if discover == None:
+                rds.register_service_discover(db, data_local_unique_id, data_local_guild_token, data_local_address_outer_ip, data_local_address_inner_ip, data_local_address_mac)
+                
+            
+        
+        
+    
+
+    
+    
+    
+    
     
     try:
         
@@ -644,7 +712,7 @@ def initialize(
         
         
         # 분산 처리 동작 클라이언트간 협업 (파티) 관련 명령어
-        console.add_command("guild-stand-up", cli_commands.master_node_start)                               # 길드 설립 (마스터 노드가 되기)
+        console.add_command("guild-stand-up", cli_commands.master_node_start)                   # 길드 설립 (마스터 노드가 되기)
         console.add_command("guild-info", cli_commands.empty)                                   # 모든 파티의 정보 보기 (마스터 노드의 자식 노드 그룹의 정보)
         console.add_command("guild-registration", cli_commands.guild_registration)              # 자신을 길드에 등록합니다
         console.add_command("guild-unique-change", cli_commands.guild_unique_change)            # 기기명 변경
@@ -666,7 +734,8 @@ def initialize(
         console.add_command("welcome", cli_commands.motd)
         
         # 개발용
-        console.add_command("@dev-migrate", cli_commands.dev__migrate) # 마이그레이션 테스트용
+        # console.add_command("@dev-migrate", cli_commands.dev__migrate) # 마이그레이션 테스트용
+        console.add_command("@guild-stand-off", cli_commands.dev__master_node_stop) # 마이그레이션 테스트용
 
         # 업데이트 (대충 git page로 출력해서 비교하면 되는거 아님? ㅋㅋ)
         # 문제는 저장장치의 스키마 구조를 어떻게 바꿀것이냐 인데 라이브러리 의존도 여기는 성가셔짐.

@@ -7,7 +7,7 @@ from .robots import Robots
 from .classes import Classes
 from .leave_classes import LeavesClass
 from .local_profile import LocalProfile
-
+from .service_discover import ServiceDiscover
 
 # ================================================================================================
 # 데이터베이스 모델 간의 관계 정의
@@ -69,4 +69,4 @@ LeavesClass.class_item = relationship("Classes", foreign_keys=[LeavesClass.class
 
 
 # 공개할 이름 정의
-__all__ = ["Roots", "Branches", "Leaves", "Robots", "Classes", "LeavesClass", "LocalProfile"]
+__all__ = ["Roots", "Branches", "Leaves", "Robots", "Classes", "LeavesClass", "LocalProfile", "ServiceDiscover"]

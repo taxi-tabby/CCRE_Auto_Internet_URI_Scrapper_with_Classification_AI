@@ -93,6 +93,9 @@ def table_init(engine: Engine, db: Session, db_type: DatabaseType):
     if not _chk_rds_table_exists(db, db_type, "classes"):
         Classes.metadata.create_all(engine)    
         
+    if not _chk_rds_table_exists(db, db_type, "service_discover"):
+        ServiceDiscover.metadata.create_all(engine)
+        
         
 def update_roots(db: Session, roots: list[Scrapper_Root]):
     """
@@ -372,5 +375,162 @@ def get_robots_by_domain(db: Session, base_domain: str):
         # Close session after handling the transaction and exceptions
         db.close()
 
+
+def register_service_discover(db: Session, unique_id: str, guild_token: str, address_outer_ip: str = '', address_inner_ip: str = '', address_mac: str = '') -> Optional[int]:
+    """
+    Register a new service discovery entry or update an existing one.
+    
+    Args:
+        db: Database session
+        unique_id: Unique identifier for the service
+        guild_token: Authentication token for the service
+        
+    Returns:
+        ID of the created/updated service discovery entry, or None if operation failed
+    """
+    try:
+        with db.begin():
+            # Check if service already exists
+            existing_service = db.query(ServiceDiscover).filter_by(
+                unique_id=unique_id,
+                guild_token=guild_token
+            ).first()
+            
+
+            if existing_service:
+                # Update existing service
+                existing_service.guild_token = guild_token
+                existing_service.is_active = True
+                existing_service.address_outer_ip = address_outer_ip
+                existing_service.address_inner_ip = address_inner_ip
+                existing_service.address_mac = address_mac
+
+                db.flush()
+                service_id = existing_service.id
+            else:
+                # Create new service
+                new_service = ServiceDiscover(
+                    unique_id=unique_id,
+                    guild_token=guild_token,
+                    address_outer_ip= address_outer_ip,
+                    address_inner_ip= address_inner_ip,
+                    address_mac= address_mac,
+                    is_active=True,
+                )
+                db.add(new_service)
+                db.flush()
+                service_id = new_service.id
+            
+        return service_id
+                
+    except SQLAlchemyError as e:
+        print(f"SQLAlchemyError occurred: {e}")
+        if db.in_transaction():
+            db.rollback()
+        return None
+    except Exception as e:
+        print(f"Error occurred: {e}")
+        if db.in_transaction():
+            db.rollback()
+        return None
+
+    
+    
+
+def get_service_discover_by_credentials(db: Session, unique_id: str, guild_token: str) -> Optional[ServiceDiscover]:
+    """
+    Retrieves a single ServiceDiscover row by unique_id and guild_token.
+    
+    Args:
+        db: Database session
+        unique_id: The unique identifier for the service
+        guild_token: The authentication token for the service
+        
+    Returns:
+        ServiceDiscover object if found, None otherwise
+    """
+    try:
+        return db.query(ServiceDiscover).filter_by(
+            unique_id=unique_id, 
+            guild_token=guild_token
+        ).first()
+    except SQLAlchemyError as e:
+        print(f"SQLAlchemyError occurred: {e}")
+        return None
+    except Exception as e:
+        print(f"Error occurred: {e}")
+        return None
+    finally:
+        if db.in_transaction():
+            db.commit()
+
+def activate_service_discover(db: Session, unique_id: str, guild_token: str, timezone_str: str = "UTC") -> bool:
+    """
+    Sets is_active to True for a ServiceDiscover row and updates the updated_at timestamp.
+    
+    Args:
+        db: Database session
+        unique_id: The unique identifier for the service
+        guild_token: The authentication token for the service
+        
+    Returns:
+        True if activation was successful, False otherwise
+    """
+    
+    time_zone = pytz.timezone(timezone_str)
+    nowtime = datetime.now(tz=time_zone)
+
+    try:
+        with db.begin():
+            service = db.query(ServiceDiscover).filter_by(
+                unique_id=unique_id, 
+                guild_token=guild_token
+            ).first()
+            
+            if service:
+                service.is_active = True
+                service.last_active_at = nowtime
+                return True
+            return False
+    except SQLAlchemyError as e:
+        print(f"SQLAlchemyError occurred: {e}")
+        return False
+    except Exception as e:
+        print(f"Error occurred: {e}")
+        return False
+
+
+def deactivate_stale_services(db: Session, seconds: int, timezone_str: str = "UTC") -> int:
+    """
+    Sets is_active to False for all ServiceDiscover rows that haven't been updated 
+    within the specified number of seconds.
+    
+    Args:
+        db: Database session
+        seconds: Number of seconds since last update to consider a service stale
+        
+    Returns:
+        Number of deactivated services
+    """
+    try:
+        with db.begin():
+            
+            time_zone = pytz.timezone(timezone_str)
+            nowtime = datetime.now(tz=time_zone)
+            
+            nowtime_utc = nowtime.astimezone(pytz.utc)
+            stale_time = nowtime_utc - timedelta(seconds=seconds)
+            result = db.query(ServiceDiscover).filter(
+                ServiceDiscover.is_active == True,
+                ServiceDiscover.last_active_at < stale_time
+            ).update({"is_active": False})
+            
+            return result
+    except SQLAlchemyError as e:
+        print(f"SQLAlchemyError occurred: {e}")
+        return 0
+    except Exception as e:
+        print(f"Error occurred: {e}")
+        return 0
 
 
