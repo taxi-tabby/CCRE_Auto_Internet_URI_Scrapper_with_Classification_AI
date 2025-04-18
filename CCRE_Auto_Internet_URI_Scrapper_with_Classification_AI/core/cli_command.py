@@ -45,6 +45,7 @@ class CLICommand:
             'GUILD_ADDRESS_MAC': 'guild_mac_address_string',
             'GUILD_LAST_RG_AT': 'guild_last_registration_at',
             'GUILD_TOKEN': 'guild_token',
+            'GUILD_MASTER_TOKEN': 'guild_master_token',
         }
 
 

@@ -70,6 +70,9 @@ def table_init(engine: Engine, db: Session, db_type: DatabaseType):
     """
     if not _chk_rds_table_exists(db, db_type, "local_profile"):
         LocalProfile.metadata.create_all(engine)
+        
+    if not _chk_rds_table_exists(db, db_type, "local_slaves"):
+        LocalSlaves.metadata.create_all(engine)
    
   
 def save_local_profile(db: Session, data_key: str, data_value: str) -> int:
@@ -142,6 +145,42 @@ def get_latest_local_profile(db: Session, data_key: str) -> Optional[str]:
         if db.in_transaction():
             db.commit() 
     
+    
+    
+def guild_join(db: Session, master_discover_id: int) -> int:
+    """
+    로컬 프로필에 키-값 쌍을 저장합니다.
+    동일한 키가 있어도 새 레코드로 계속 추가됩니다.
+    
+    Args:
+        db (Session): 데이터베이스 세션
+        
+    Returns:
+        int: 생성된 레코드의 ID, 오류 발생 시 -1
+    """
+    val_id = -1
+    
+    try:
+        with db.begin():  # 트랜잭션 시작
+            new_profile = LocalSlaves()
+            new_profile.service_discover_id = master_discover_id
+            db.add(new_profile)
+            db.flush()  # ID를 얻기 위해 flush 호출
+            val_id = new_profile.id
+            
+    except SQLAlchemyError as e:
+        print(f"SQLAlchemyError occurred: {str(e)}")
+    except Exception as e:
+        print(f"Error occurred: {str(e)}")
+        
+    finally:
+        try:
+            db.commit()
+        except Exception as e:
+            print(f"Commit failed: {str(e)}")
+            db.rollback()
+    
+    return val_id
 
 
 
