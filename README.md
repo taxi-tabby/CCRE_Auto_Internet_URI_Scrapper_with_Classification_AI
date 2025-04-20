@@ -67,6 +67,12 @@ https://huggingface.co/
 1. 프로젝트 진행하면서 Obsidian 을 아에 프로젝트에 박아버리면 협업에서 도움될련지 확인.
 2. 이론 문서랑 왕도인 패턴 같은거 확인하는 중.
 
+```console
+> guild-join --ip 127.0.0.1 --port 12345 --token 000
+You are not allowed to be a slave. you are the master node. sir
+```
+
+
 #### 2025.04.14 (2)
 
 ```console
