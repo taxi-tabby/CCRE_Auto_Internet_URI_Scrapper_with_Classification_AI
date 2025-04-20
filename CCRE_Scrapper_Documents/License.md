@@ -1,3 +1,8 @@
+---
+tags:
+  - main-sub
+---
+
 # MIT License
 
 Copyright (c) 2023 CCRE_Auto_Internet_URI_Scrapper_with_Classification_AI

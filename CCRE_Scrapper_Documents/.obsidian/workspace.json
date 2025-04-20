@@ -6,64 +6,71 @@
       {
         "id": "691577eb3e90d0c4",
         "type": "tabs",
+        "dimension": 38.159203980099505,
         "children": [
           {
-            "id": "b0ac19730d7d4bd3",
-            "type": "leaf",
-            "state": {
-              "type": "localgraph",
-              "state": {
-                "file": "DevMindMap/ICMP Ptorocol.md",
-                "options": {
-                  "collapse-filter": true,
-                  "search": "",
-                  "localJumps": 1,
-                  "localBacklinks": true,
-                  "localForelinks": true,
-                  "localInterlinks": false,
-                  "showTags": false,
-                  "showAttachments": false,
-                  "hideUnresolved": false,
-                  "collapse-color-groups": true,
-                  "colorGroups": [],
-                  "collapse-display": true,
-                  "showArrow": false,
-                  "textFadeMultiplier": 0,
-                  "nodeSizeMultiplier": 1,
-                  "lineSizeMultiplier": 1,
-                  "collapse-forces": true,
-                  "centerStrength": 0.518713248970312,
-                  "repelStrength": 10,
-                  "linkStrength": 1,
-                  "linkDistance": 250,
-                  "scale": 1.4019828977761042,
-                  "close": true
-                }
-              },
-              "icon": "lucide-git-fork",
-              "title": "ICMP Ptorocol 그래프"
-            }
-          },
-          {
-            "id": "1cf623e4676a46e2",
+            "id": "64a68b28ff94a56c",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "DevMindMap/ICMP Ptorocol.md",
+                "file": "DevMindMap/GUILD_TOKEN.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "ICMP Ptorocol"
+              "title": "GUILD_TOKEN"
+            }
+          },
+          {
+            "id": "94097a1763649e9f",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "DevMindMap/사업.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "사업"
+            }
+          },
+          {
+            "id": "882f8e87b7026e4e",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "DevMindMap/Dev Mind Map - Hall.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Dev Mind Map - Hall"
+            }
+          },
+          {
+            "id": "75811025c6cf2476",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "DevMindMap/고가용성.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "고가용성"
             }
           }
         ],
-        "currentTab": 1
+        "currentTab": 3
       },
       {
         "id": "98f805b60728c509",
         "type": "tabs",
+        "dimension": 61.8407960199005,
         "children": [
           {
             "id": "75dde13c0e99d430",
@@ -76,8 +83,46 @@
               "icon": "lucide-git-fork",
               "title": "그래프 뷰"
             }
+          },
+          {
+            "id": "b0ac19730d7d4bd3",
+            "type": "leaf",
+            "state": {
+              "type": "localgraph",
+              "state": {
+                "file": "DevMindMap/고가용성.md",
+                "options": {
+                  "collapse-filter": true,
+                  "search": "",
+                  "localJumps": 1,
+                  "localBacklinks": true,
+                  "localForelinks": true,
+                  "localInterlinks": true,
+                  "showTags": false,
+                  "showAttachments": false,
+                  "hideUnresolved": true,
+                  "collapse-color-groups": true,
+                  "colorGroups": [],
+                  "collapse-display": true,
+                  "showArrow": true,
+                  "textFadeMultiplier": -0.4,
+                  "nodeSizeMultiplier": 1.35052083333333,
+                  "lineSizeMultiplier": 3.009375,
+                  "collapse-forces": true,
+                  "centerStrength": 0.518713248970312,
+                  "repelStrength": 10,
+                  "linkStrength": 1,
+                  "linkDistance": 250,
+                  "scale": 0.7132754626224447,
+                  "close": true
+                }
+              },
+              "icon": "lucide-git-fork",
+              "title": "고가용성 그래프"
+            }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -109,7 +154,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "",
+                "query": "tag:#URI",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": false,
@@ -150,7 +195,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "DevMindMap/ICMP Ptorocol.md",
+                "file": "DevMindMap/고가용성.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -160,7 +205,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "ICMP Ptorocol 의 백링크"
+              "title": "고가용성 의 백링크"
             }
           },
           {
@@ -169,12 +214,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "DevMindMap/ICMP Ptorocol.md",
+                "file": "DevMindMap/후원.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "ICMP Ptorocol 의 나가는 링크"
+              "title": "후원 의 나가는 링크"
             }
           },
           {
@@ -198,13 +243,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "DevMindMap/ICMP Ptorocol.md",
+                "file": "DevMindMap/후원.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "ICMP Ptorocol 의 개요"
+              "title": "후원 의 개요"
             }
           }
         ]
@@ -221,40 +266,39 @@
       "daily-notes:오늘의 일일 노트 열기": false,
       "templates:템플릿 삽입": false,
       "command-palette:명령어 팔레트 열기": false,
-      "publish:변경사항 게재": false,
       "copilot:Open Copilot Chat": false
     }
   },
-  "active": "1cf623e4676a46e2",
+  "active": "75811025c6cf2476",
   "lastOpenFiles": [
-    "DevMindMap/Dead URI.md",
-    "DevMindMap/ICMP Ptorocol.md",
-    "DevMindMap/HTTP.md",
-    "DevMindMap/URI 필터링.md",
-    "DevMindMap/URI.md",
-    "DevMindMap/Dead URL 필터링.md",
-    "DevMindMap/스크레핑.md",
+    "DevMindMap/서비스 메시.md",
+    "DevMindMap/서비스 모니터링.md",
+    "DevMindMap/웹 대시보드.md",
     "DevMindMap/고가용성.md",
+    "DevMindMap/스크레핑.md",
+    "DevMindMap/Dev Mind Map - Hall.md",
+    "Features/Feature.md",
+    "The Index.md",
+    "DevMindMap/사업.md",
+    "DevMindMap/GUILD_TOKEN.md",
+    "DevMindMap/GUILD_UNIQUE_ID.md",
+    "DevMindMap/서비스 부트스트랩.md",
+    "DevMindMap/서비스 디스커버리.md",
+    "DevMindMap/마이크로서비스 아키텍쳐.md",
+    "DevMindMap/HTTPS.md",
     "DevMindMap/SSL.md",
     "DevMindMap/TLS.md",
-    "DevMindMap/Dev Mind Map - Hall.md",
-    "DevMindMap/서비스 메시.md",
-    "DevMindMap/사업.md",
-    "DevMindMap/후원.md",
-    "DevMindMap/통신방법.md",
-    "DevMindMap/HTTPS.md",
-    "The Index.md",
-    "Devlogs/Devlog.md",
+    "DevMindMap/로드 밸런서.md",
+    "DevMindMap/서버 사이드 디스커버리 패턴.md",
+    "DevMindMap/클라이언트 사이드 디스커버리 패턴.md",
+    "DevMindMap/마스터-슬레이브 구조.md",
+    "DevMindMap/URI.md",
+    "DevMindMap/Dead URI.md",
+    "DevMindMap/HTTP HEAD.md",
+    "DevMindMap/HTTP GET.md",
+    "DevMindMap/HTTP HEADER (구조).md",
     "Features",
     "Devlogs",
-    "DevMindMap/test.md",
-    "DevMindMap/수익화.md",
-    "test.md",
-    "License.md",
-    "The Index 1.md",
-    "Features/Feature.md",
-    "2025-04-19.md",
-    "DevMindMap",
-    "create a link.md"
+    "DevMindMap"
   ]
 }
