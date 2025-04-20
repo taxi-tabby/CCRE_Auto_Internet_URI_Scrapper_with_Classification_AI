@@ -147,26 +147,24 @@ def get_latest_local_profile(db: Session, data_key: str) -> Optional[str]:
     
     
     
+    
+    
+
 def guild_join(db: Session, master_discover_id: int) -> int:
     """
-    로컬 프로필에 키-값 쌍을 저장합니다.
-    동일한 키가 있어도 새 레코드로 계속 추가됩니다.
-    
-    Args:
-        db (Session): 데이터베이스 세션
-        
-    Returns:
-        int: 생성된 레코드의 ID, 오류 발생 시 -1
+    (마스터 노드용)
+    로컬 저장소에 슬레이브 노드의 서비스 디스커버리 ID를 저장합니다.
     """
     val_id = -1
     
     try:
-        with db.begin():  # 트랜잭션 시작
-            new_profile = LocalSlaves()
-            new_profile.service_discover_id = master_discover_id
-            db.add(new_profile)
-            db.flush()  # ID를 얻기 위해 flush 호출
-            val_id = new_profile.id
+        with db.begin():
+            local_slaves = LocalSlaves()
+            local_slaves.service_discover_id = master_discover_id
+            db.add(local_slaves)
+            db.flush()
+            
+            val_id = local_slaves.id
             
     except SQLAlchemyError as e:
         print(f"SQLAlchemyError occurred: {str(e)}")

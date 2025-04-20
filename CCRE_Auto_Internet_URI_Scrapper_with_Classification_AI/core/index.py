@@ -713,15 +713,19 @@ def initialize(
         
         # 분산 처리 동작 클라이언트간 협업 (파티) 관련 명령어
         console.add_command("guild-stand-up", cli_commands.master_node_start)                   # 길드 설립 (마스터 노드가 되기)
-        console.add_command("guild-info", cli_commands.empty)                                   # 모든 파티의 정보 보기 (마스터 노드의 자식 노드 그룹의 정보)
+        # console.add_command("guild-info", cli_commands.empty)                                   # 모든 파티의 정보 보기 (마스터 노드의 자식 노드 그룹의 정보)
         console.add_command("guild-registration", cli_commands.guild_registration)              # 자신을 길드에 등록합니다
         console.add_command("guild-unique-change", cli_commands.guild_unique_change)            # 기기명 변경
-        console.add_command("party-make", cli_commands.empty)                                   # 파티 만들기 (자식 노드 그룹 생성)
-        console.add_command("party-join", cli_commands.empty)                                   # 파티에 참여하기 (자식 노드 그룹 참여)
-        console.add_command("party-info", cli_commands.empty)                                   # 파티 정보 보기 (자식 노드 그룹의 정보)
-        console.add_command("party-coop-change", cli_commands.empty)                            # 파티가 실행되는데 기준이 되는 방식
-        console.add_command("party-assign-root", cli_commands.empty)                            # 파티에 속한 기기에 루트 추가하기
-        console.add_command("party-marge", cli_commands.empty)                                  # 파티 2개를 1개로 합치기 (우측 기준 좌측으로 병합)
+        console.add_command("guild-join", cli_commands.guild_join)                              # 길드에 참여하기 (자식 노드 그룹 참여)
+        console.add_command("guild-ping-to-slaves", cli_commands.ping_to_slaves)                         # 슬레이브 노드에 ping을 날림 (자식 노드 그룹에 ping을 날림)
+        console.add_command("guild-leave", cli_commands.empty)                                  # 길드에서 나가기 (자식 노드 그룹 탈퇴)
+        
+        # console.add_command("party-make", cli_commands.empty)                                   # 파티 만들기 (자식 노드 그룹 생성)
+        # console.add_command("party-join", cli_commands.empty)                                   # 파티에 참여하기 (자식 노드 그룹 참여)
+        # console.add_command("party-info", cli_commands.empty)                                   # 파티 정보 보기 (자식 노드 그룹의 정보)
+        # console.add_command("party-coop-change", cli_commands.empty)                            # 파티가 실행되는데 기준이 되는 방식
+        # console.add_command("party-assign-root", cli_commands.empty)                            # 파티에 속한 기기에 루트 추가하기
+        # console.add_command("party-marge", cli_commands.empty)                                  # 파티 2개를 1개로 합치기 (우측 기준 좌측으로 병합)
 
 
         
@@ -765,6 +769,12 @@ def initialize(
             print("Master node stopped successfully.")
         else:
             print("Failed to stop master node.")
+            
+    if service_mesh_slave.is_running():
+        if service_mesh_slave.stop():
+            print("Slave node stopped successfully.")
+        else:
+            print("Failed to stop slave node.")
 
     # 모든 mq 연결에 종료를 시도함
     for mq_conn in all_mq_session:

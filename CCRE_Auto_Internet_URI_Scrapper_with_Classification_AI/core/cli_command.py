@@ -80,6 +80,8 @@ class CLICommand:
         # Print success message
         print(f"Migration {action} for {db_type} database completed successfully.", 'success')
     
+    
+    
     def dev__master_node_stop(self):
         """
         [DEV] Stop the master node.
@@ -106,7 +108,7 @@ class CLICommand:
         print = self.console_handler.print_formatted
         
         
-        def callback(data: str, _RetAddress: tuple[str, int]):
+        def callback(socket: socket.socket, data: str, _RetAddress: tuple[str, int]):
             print(f"Received data: {data} from {_RetAddress}", 'info')
         
         def init_callback(success: bool, message: str, ip: str):
@@ -123,8 +125,18 @@ class CLICommand:
                 print('Master node started successfully.', 'success')
         else:
             print('Failed to start master node.', 'error')
-    
-    
+        
+        
+        
+    def ping_to_slaves(self):
+        if self.master_socket.is_running():
+            self.master_socket.broadcast('ping')
+            print('Ping sent to slaves.', 'info')
+        else:
+            print('Master node is not running.', 'error')
+            
+            
+            
     def master_node_stop(self):
         """
         Stop the master node.
@@ -140,6 +152,77 @@ class CLICommand:
             self.master_socket = None
         else:
             print('Failed to stop master node.', 'error')
+            
+            
+            
+    #guild-join --ip 127.0.0.1 --port 12345 --token 000
+    def guild_join(self, ip: str, port: str, token: str):
+        """
+        Join the guild with the given IP and port.
+        """
+        
+        print = self.console_handler.print_formatted
+        
+        if self.slave_socket is None:
+            print('Slave node not available.', 'error')
+            return
+        
+        
+        if self.slave_socket.is_running():
+            print('Slave node already running.', 'error')
+            return
+        
+        
+        with self.local_session.get_db() as db:
+
+            guild_is = local_rds.get_latest_local_profile(db, self.PROFILE_KEYS['GUILD_IS'])
+            
+            if guild_is is not None and guild_is == '1':
+                print('You are not allowed to be a slave. you are the master node. sir', 'error')
+                return
+
+        
+        
+        
+        def callback(data: str, _RetAddress: tuple[str, int]):
+            print(f"Received data: {data} from {_RetAddress}", 'info')
+            
+        def init_callback(success: bool, message: str, ip: str):
+            print(f"Master node initialized: {message} / open is {success} / address is {ip}", 'info')
+        
+        
+        self.slave_socket.set_init_callback(init_callback)
+        self.slave_socket.set_callback(callback)
+        
+        
+        self.slave_socket.init_connection()
+        # self.slave_socket.connect('127.0.0.1', 12345, 12346)
+        self.slave_socket.connect(ip, int(port), 12346)
+        
+        
+        if self.master_socket.is_running():
+            if self.master_socket.add_to_whitelist(ip):
+                print(f"{ip} added to whitelist.", 'info')
+            
+        
+        
+        if self.slave_socket.start_listening():
+            if not self.slave_socket.is_running():
+                print('Slave node not available.', 'error')
+            else:
+                self.slave_socket.send_message('hello master!')
+                print('Slave node started successfully.', 'success')
+        else:
+            print('Failed to start slave node.', 'error')
+        
+        
+        
+        
+        
+        # if self.slave_socket.join(guild_ip, guild_port, guild_token):
+        #     print('Joined the guild successfully.', 'success')
+        # else:
+        #     print('Failed to join the guild.', 'error')
     
     
     

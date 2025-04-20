@@ -57,7 +57,7 @@ class UDPServer:
                     break
                     
                 # 소켓에 타임아웃 설정
-                self.server_socket.settimeout(0.5)  # 0.5초 타임아웃
+                self.server_socket.settimeout(3)  # 0.5초 타임아웃
                 
                 try:
                     data, client_address = self.server_socket.recvfrom(1024)
@@ -161,3 +161,60 @@ class UDPServer:
     def is_running(self) -> bool:
         """서버가 실행 중인지 확인합니다."""
         return self.running
+    
+    
+    def send_to_client(self, message: str, client_address: Tuple[str, int]) -> bool:
+        """특정 클라이언트에게 메시지를 전송합니다.
+        
+        Args:
+            message: 전송할 메시지
+            client_address: (IP, 포트) 형태의 클라이언트 주소
+            
+        Returns:
+            bool: 전송 성공 여부
+        """
+        if not self.running or not self.server_socket:
+            print("서버가 실행 중이 아닙니다.")
+            return False
+            
+        try:
+            self.server_socket.sendto(message.encode(), client_address)
+            print(f"메시지 전송 완료: {message} to {client_address[0]}:{client_address[1]}")
+            return True
+        except Exception as e:
+            print(f"메시지 전송 실패: {e}")
+            return False
+
+
+
+    def broadcast(self, message: str, clients: list = None) -> bool:
+        """모든 클라이언트 또는 지정된 클라이언트 목록에 메시지를 전송합니다.
+        
+        Args:
+            message: 전송할 메시지
+            clients: (IP, 포트) 튜플의 목록, None이면 화이트리스트 사용
+            
+        Returns:
+            bool: 적어도 하나의 클라이언트에게 전송 성공 여부
+        """
+        if not self.running or not self.server_socket:
+            print("서버가 실행 중이 아닙니다.")
+            return False
+            
+        # 클라이언트 목록이 제공되지 않으면 화이트리스트 사용
+        target_clients = clients if clients else [(ip, self.port) for ip in self.whitelist]
+        if not target_clients:
+            print("전송할 클라이언트가 없습니다.")
+            return False
+            
+        success = False
+        for client in target_clients:
+            try:
+                self.server_socket.sendto(message.encode(), client)
+                print(f"브로드캐스트 메시지 전송: {message} to {client[0]}:{client[1]}")
+                success = True
+            except Exception as e:
+                print(f"클라이언트 {client[0]}:{client[1]}에 전송 실패: {e}")
+                
+        return success
+    
