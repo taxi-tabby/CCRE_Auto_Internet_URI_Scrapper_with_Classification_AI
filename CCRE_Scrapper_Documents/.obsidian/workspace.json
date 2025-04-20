@@ -76,7 +76,6 @@
             "state": {
               "type": "localgraph",
               "state": {
-                "file": "DevMindMap/통신.md",
                 "options": {
                   "collapse-filter": true,
                   "search": "",
@@ -104,11 +103,10 @@
                 }
               },
               "icon": "lucide-git-fork",
-              "title": "통신 그래프"
+              "title": "그래프 뷰"
             }
           }
-        ],
-        "currentTab": 1
+        ]
       }
     ],
     "direction": "vertical"
@@ -181,7 +179,6 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "DevMindMap/통신.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -191,7 +188,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "통신 의 백링크"
+              "title": "백링크"
             }
           },
           {
@@ -255,11 +252,11 @@
       "copilot:Open Copilot Chat": false
     }
   },
-  "active": "882f8e87b7026e4e",
+  "active": "75dde13c0e99d430",
   "lastOpenFiles": [
+    "DevMindMap/통신.md",
     "DevMindMap/Dev Mind Map - Hall.md",
     "DevMindMap/원시 소켓.md",
-    "DevMindMap/통신.md",
     "DevMindMap/후원.md",
     "DevMindMap/사업.md",
     "DevMindMap/수익화.md",
