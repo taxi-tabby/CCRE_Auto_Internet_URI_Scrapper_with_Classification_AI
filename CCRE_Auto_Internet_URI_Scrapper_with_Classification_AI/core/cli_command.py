@@ -212,7 +212,7 @@ class CLICommand:
             print(f"Received data: {data} from {_RetAddress}", 'info')
             
         def init_callback(success: bool, message: str, ip: str):
-            print(f"Master node initialized: {message} / open is {success} / address is {ip}", 'info')
+            print(f"Slave node initialized: {message} / open is {success} / address is {ip}", 'info')
         
         
         self.slave_socket.set_init_callback(init_callback)

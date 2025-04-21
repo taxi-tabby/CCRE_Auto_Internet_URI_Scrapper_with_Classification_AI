@@ -48,13 +48,13 @@ class UDPClient:
                 self.client_socket.bind(('0.0.0.0', self._client_port))  # 클라이언트 포트 바인딩
                 
             if self.init_callback:
-                self.init_callback(True, "연결 성공", f"{server_ip}:{server_port}")
+                self.init_callback(True, server_ip, f"{client_port}")
                 
             return True
         
         except Exception as e:
             if self.init_callback:
-                self.init_callback(False, f"연결 실패: {e}", f"{server_ip}:{server_port}")
+                self.init_callback(False, server_ip, f"{client_port}")
                 
             print(f"연결 실패: {e}")
             return False

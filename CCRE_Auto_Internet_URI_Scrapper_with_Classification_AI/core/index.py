@@ -637,7 +637,7 @@ def initialize(
         
     with conn.get_db() as db:
         discover = rds.get_service_discover_by_credentials(db, data_local_unique_id, data_local_guild_token)
-        if data_local_guild_master_node_is:
+        if data_local_guild_is and data_local_guild_master_node_is:
             
             cli_commands.be_a_master_node()
             
