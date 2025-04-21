@@ -604,6 +604,7 @@ def initialize(
                                             run_migrations )
 
     data_local_guild_is = False
+    data_local_guild_master_node_is = False
     data_local_unique_id = ''
     data_local_guild_token = ''
     data_local_address_outer_ip = ''
@@ -613,6 +614,9 @@ def initialize(
     with local.get_db() as db:
         _guild_value = local_rds.get_latest_local_profile(db, cli_commands.PROFILE_KEYS['GUILD_IS'])
         data_local_guild_is = True if _guild_value is not None and _guild_value == '1' else False
+        
+        _guild_master_node_value = local_rds.get_latest_local_profile(db, cli_commands.PROFILE_KEYS['GUILD_MASTER_NODE_IS'])
+        data_local_guild_master_node_is = True if _guild_master_node_value is not None and _guild_master_node_value == '1' else False
         
         _guild_unique_id = local_rds.get_latest_local_profile(db, cli_commands.PROFILE_KEYS['GUILD_UNIQUE_ID'])
         data_local_unique_id = _guild_unique_id if _guild_unique_id is not None else ''
@@ -633,9 +637,9 @@ def initialize(
         
     with conn.get_db() as db:
         discover = rds.get_service_discover_by_credentials(db, data_local_unique_id, data_local_guild_token)
-        if data_local_guild_is:
+        if data_local_guild_master_node_is:
             
-            cli_commands.master_node_start()
+            cli_commands.be_a_master_node()
             
             # 없으면 공용 데이터베이스에 등록. 이후 슬레이브가 마스터를 최초 및 갱신 시 조회하기 위해 사용됨.
             if discover == None:
@@ -712,7 +716,7 @@ def initialize(
         
         
         # 분산 처리 동작 클라이언트간 협업 (파티) 관련 명령어
-        console.add_command("guild-stand-up", cli_commands.master_node_start)                   # 길드 설립 (마스터 노드가 되기)
+        console.add_command("guild-stand-up", cli_commands.be_a_master_node)                   # 길드 설립 (마스터 노드가 되기)
         # console.add_command("guild-info", cli_commands.empty)                                   # 모든 파티의 정보 보기 (마스터 노드의 자식 노드 그룹의 정보)
         console.add_command("guild-registration", cli_commands.guild_registration)              # 자신을 길드에 등록합니다
         console.add_command("guild-unique-change", cli_commands.guild_unique_change)            # 기기명 변경

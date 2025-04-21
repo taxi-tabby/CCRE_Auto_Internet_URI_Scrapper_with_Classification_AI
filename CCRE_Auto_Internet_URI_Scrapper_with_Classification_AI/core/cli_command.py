@@ -46,6 +46,8 @@ class CLICommand:
             'GUILD_LAST_RG_AT': 'guild_last_registration_at',
             'GUILD_TOKEN': 'guild_token',
             'GUILD_MASTER_TOKEN': 'guild_master_token',
+            'GUILD_MASTER_NODE_IS': 'guild_master_node_is',
+            'GUILD_SLAVE_NODE_IS': 'guild_slave_node_is',
         }
 
 
@@ -101,7 +103,7 @@ class CLICommand:
     
     
     
-    def master_node_start(self):
+    def be_a_master_node(self):
         """
         Start the master node.
         """
@@ -116,6 +118,13 @@ class CLICommand:
         
         self.master_socket.set_callback(callback)
         self.master_socket.set_init_callback(init_callback)
+
+
+        # Keys
+        key_guild_master_is = self.PROFILE_KEYS['GUILD_MASTER_NODE_IS']
+        
+        with self.local_session.get_db() as db:
+            local_rds.save_local_profile(db, key_guild_master_is, '1')
 
 
         if self.master_socket.listen():
@@ -137,7 +146,7 @@ class CLICommand:
             
             
             
-    def master_node_stop(self):
+    def quit_master_node(self):
         """
         Stop the master node.
         """
@@ -146,6 +155,14 @@ class CLICommand:
         if self.master_socket is None:
             print('Master node not available.', 'error')
             return
+        
+        
+        # Keys
+        key_guild_master_is = self.PROFILE_KEYS['GUILD_MASTER_NODE_IS']
+        
+        with self.local_session.get_db() as db:
+            local_rds.save_local_profile(db, key_guild_master_is, '0')
+        
         
         if self.master_socket.stop():
             print('Master node stopped successfully.', 'success')
@@ -175,9 +192,16 @@ class CLICommand:
         
         with self.local_session.get_db() as db:
 
+
             guild_is = local_rds.get_latest_local_profile(db, self.PROFILE_KEYS['GUILD_IS'])
             
             if guild_is is not None and guild_is == '1':
+                print('You are not registered in guild', 'error')
+                return
+
+            guild_master_node_is = local_rds.get_latest_local_profile(db, self.PROFILE_KEYS['GUILD_MASTER_NODE_IS'])
+            
+            if guild_master_node_is is not None and guild_master_node_is == '1':
                 print('You are not allowed to be a slave. you are the master node. sir', 'error')
                 return
 
