@@ -195,7 +195,7 @@ class CLICommand:
 
             guild_is = local_rds.get_latest_local_profile(db, self.PROFILE_KEYS['GUILD_IS'])
             
-            if guild_is is not None and guild_is == '1':
+            if guild_is is None or guild_is == '0':
                 print('You are not registered in guild', 'error')
                 return
 
