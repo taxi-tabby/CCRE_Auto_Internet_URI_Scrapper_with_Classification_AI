@@ -68,7 +68,7 @@ class UDPServer:
                         print(f"허용되지 않은 IP: {client_ip}에서 접근을 차단했습니다.")
                         continue
 
-                    print(f"받은 데이터: {data.decode()} from {client_ip}")
+                    # print(f"받은 데이터: {data.decode()} from {client_ip}")
 
                     # 콜백이 설정되어 있으면 콜백으로 처리
                     if self.callback:

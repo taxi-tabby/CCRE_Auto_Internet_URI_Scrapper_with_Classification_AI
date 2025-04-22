@@ -51,10 +51,6 @@ class CLICommand:
         }
 
 
-
-
-
-
     def empty(self):
         """
         Not available command.
@@ -62,25 +58,25 @@ class CLICommand:
         return
     
     
-    def dev__migrate(self, db_type: str, action: str, message: Optional[str] = None, revision: Optional[str] = None):
-        """
-        [DEV] Run the migration command.
-        """
-        print = self.console_handler.print_formatted
+    # def dev__migrate(self, db_type: str, action: str, message: Optional[str] = None, revision: Optional[str] = None):
+    #     """
+    #     [DEV] Run the migration command.
+    #     """
+    #     print = self.console_handler.print_formatted
         
-        if db_type not in ['main', 'local']:
-            print(f"Unknown database type: {db_type}", 'error')
-            return
+    #     if db_type not in ['main', 'local']:
+    #         print(f"Unknown database type: {db_type}", 'error')
+    #         return
         
-        if action not in ['upgrade', 'revision', 'downgrade']:
-            print(f"Unknown action: {action}", 'error')
-            return
+    #     if action not in ['upgrade', 'revision', 'downgrade']:
+    #         print(f"Unknown action: {action}", 'error')
+    #         return
         
-        # Run the migration
-        self.run_migrations(db_type, self.db_session.engine.url, action, message, revision)
+    #     # Run the migration
+    #     self.run_migrations(db_type, self.db_session.engine.url, action, message, revision)
         
-        # Print success message
-        print(f"Migration {action} for {db_type} database completed successfully.", 'success')
+    #     # Print success message
+    #     print(f"Migration {action} for {db_type} database completed successfully.", 'success')
     
     
     
@@ -136,8 +132,13 @@ class CLICommand:
             print('Failed to start master node.', 'error')
         
         
-        
+    
+    
     def ping_to_slaves(self):
+        """
+        Ping the slaves to check their status. (작업 전)
+        """
+        
         if self.master_socket.is_running():
             self.master_socket.broadcast('ping')
             print('Ping sent to slaves.', 'info')
